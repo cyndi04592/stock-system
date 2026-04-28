@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>股票健診系統 + TACO</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#020A14;--card:#071525;--card2:#0A1E35;
+  --gold:#F5A623;--cyan:#00D4FF;--green:#00FF88;
+  --red:#FF3366;--orange:#FF6B35;--purple:#A855F7;
+  --teal:#00CDB7;--taco:#FF4500;
+  --white:#E8F4FD;--gray:#4A6580;--lgray:#8BA8C4;
+  --border:rgba(0,212,255,0.12);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--white);font-family:'Noto Sans TC',sans-serif;min-height:100vh;}
+.page{max-width:1140px;margin:0 auto;padding:20px;}
+
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:16px 0 20px;border-bottom:1px solid var(--border);margin-bottom:24px;}
+.logo{font-family:'Orbitron',sans-serif;font-size:17px;font-weight:900;color:var(--gold);letter-spacing:2px;}
+.logo span{color:var(--cyan);}
+.clock{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--gray);}
+
+.input-section{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px 24px;margin-bottom:16px;}
+.input-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;}
+.input-group{display:flex;flex-direction:column;gap:6px;}
+.input-label{font-size:10px;color:var(--gray);font-family:'JetBrains Mono',monospace;letter-spacing:1px;text-transform:uppercase;}
+.stock-input{background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;width:155px;letter-spacing:2px;transition:border-color 0.2s;}
+.stock-input:focus{outline:none;border-color:var(--cyan);}
+.market-select{background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:12px;cursor:pointer;}
+.market-select:focus{outline:none;border-color:var(--cyan);}
+
+.period-row{display:flex;gap:7px;flex-wrap:wrap;}
+.period-btn{padding:8px 13px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--gray);font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer;transition:all 0.2s;letter-spacing:0.5px;white-space:nowrap;}
+.period-btn:hover{color:var(--white);border-color:rgba(255,255,255,0.2);}
+.period-btn.p-day.active{background:rgba(245,166,35,0.12);border-color:var(--gold);color:var(--gold);}
+.period-btn.p-short.active{background:rgba(255,107,53,0.12);border-color:var(--orange);color:var(--orange);}
+.period-btn.p-mid.active{background:rgba(0,212,255,0.12);border-color:var(--cyan);color:var(--cyan);}
+.period-btn.p-long.active{background:rgba(168,85,247,0.12);border-color:var(--purple);color:var(--purple);}
+.period-btn.p-ultra.active{background:rgba(0,205,183,0.12);border-color:var(--teal);color:var(--teal);}
+
+.analyze-btn{padding:10px 24px;background:var(--cyan);border:none;border-radius:8px;color:#020A14;font-weight:900;font-size:13px;cursor:pointer;transition:all 0.2s;font-family:'Orbitron',sans-serif;letter-spacing:1px;white-space:nowrap;}
+.analyze-btn:hover{opacity:0.85;transform:translateY(-1px);}
+
+.quick-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px;align-items:center;}
+.quick-label{font-size:10px;color:var(--gray);font-family:'JetBrains Mono',monospace;letter-spacing:1px;}
+.quick-tag{padding:4px 11px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--lgray);font-size:10px;cursor:pointer;transition:all 0.2s;font-family:'JetBrains Mono',monospace;}
+.quick-tag:hover{color:var(--white);border-color:rgba(255,255,255,0.25);}
+.quick-tag.tw{border-color:rgba(245,166,35,0.3);color:#C8A060;}
+.quick-tag.tw:hover{color:var(--gold);border-color:var(--gold);}
+
+.period-info{padding:14px 18px;border-radius:10px;margin-bottom:20px;font-size:12px;line-height:1.8;border-left:3px solid;}
+.pi-day{background:rgba(245,166,35,0.06);border-color:var(--gold);color:#C8A060;}
+.pi-short{background:rgba(255,107,53,0.06);border-color:var(--orange);color:#C87040;}
+.pi-mid{background:rgba(0,212,255,0.06);border-color:var(--cyan);color:#60A8C8;}
+.pi-long{background:rgba(168,85,247,0.06);border-color:var(--purple);color:#A878D0;}
+.pi-ultra{background:rgba(0,205,183,0.06);border-color:var(--teal);color:#50B0A8;}
+.pi-title{font-weight:700;margin-bottom:6px;font-family:'JetBrains Mono',monospace;letter-spacing:1px;font-size:11px;}
+.pi-focus{margin-top:8px;font-size:11px;display:flex;gap:10px;flex-wrap:wrap;}
+.pi-focus-item{padding:3px 10px;border-radius:4px;background:rgba(255,255,255,0.06);font-family:'JetBrains Mono',monospace;}
+
+/* TACO 橫幅 */
+.taco-banner{
+  background:linear-gradient(135deg,rgba(255,69,0,0.12),rgba(255,69,0,0.06));
+  border:1px solid rgba(255,69,0,0.35);
+  border-radius:14px;padding:16px 20px;margin-bottom:20px;
+}
+.taco-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.taco-badge{
+  font-family:'Orbitron',sans-serif;font-size:11px;font-weight:900;
+  padding:5px 14px;border-radius:6px;
+  background:var(--taco);color:white;letter-spacing:2px;
+}
+.taco-title{font-size:13px;font-weight:700;color:var(--taco);}
+.taco-subtitle{font-size:10px;color:var(--gray);font-family:'JetBrains Mono',monospace;margin-top:2px;}
+.taco-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.taco-item{
+  padding:10px 12px;border-radius:8px;
+  background:rgba(0,0,0,0.3);border:1px solid rgba(255,69,0,0.2);
+}
+.taco-item-label{font-size:9px;color:var(--gray);font-family:'JetBrains Mono',monospace;letter-spacing:0.5px;margin-bottom:5px;}
+.taco-item-value{font-size:13px;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.taco-item-desc{font-size:10px;color:var(--lgray);margin-top:3px;line-height:1.4;}
+.taco-signal{
+  margin-top:12px;padding:10px 14px;border-radius:8px;
+  font-size:12px;line-height:1.7;
+}
+.taco-buy{background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.25);color:#60C890;}
+.taco-watch{background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.25);color:#C87040;}
+.taco-danger{background:rgba(255,51,102,0.08);border:1px solid rgba(255,51,102,0.25);color:#C85070;}
+.taco-signal-title{font-weight:700;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:1px;margin-bottom:3px;}
+
+/* Trump X發文 */
+.trump-posts{margin-top:12px;}
+.trump-post-item{
+  padding:8px 12px;border-radius:8px;margin-bottom:6px;
+  background:rgba(0,0,0,0.25);border-left:3px solid var(--taco);
+  font-size:11px;color:var(--lgray);line-height:1.5;
+}
+.trump-post-meta{
+  font-size:9px;font-family:'JetBrains Mono',monospace;
+  color:var(--gray);margin-bottom:3px;
+}
+.trump-post-impact{
+  display:inline-block;padding:2px 8px;border-radius:4px;
+  font-size:9px;font-weight:700;font-family:'JetBrains Mono',monospace;
+  margin-top:4px;
+}
+.impact-bull{background:rgba(0,255,136,0.15);color:var(--green);}
+.impact-bear{background:rgba(255,51,102,0.15);color:var(--red);}
+.impact-neutral{background:rgba(74,101,128,0.2);color:var(--gray);}
+
+.section-title{font-family:'Orbitron',sans-serif;font-size:11px;color:var(--gold);letter-spacing:3px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+.section-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent);}
+
+.cat-tabs{display:flex;gap:7px;margin-bottom:16px;flex-wrap:wrap;}
+.cat-tab{padding:5px 14px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--gray);font-size:11px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;transition:all 0.2s;}
+.cat-tab:hover{color:var(--white);}
+.cat-tab.active{background:rgba(0,212,255,0.1);border-color:var(--cyan);color:var(--cyan);}
+.cat-tab.taco-tab{border-color:rgba(255,69,0,0.3);color:#C85030;}
+.cat-tab.taco-tab.active{background:rgba(255,69,0,0.1);border-color:var(--taco);color:var(--taco);}
+
+.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px;}
+
+.step-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;cursor:pointer;transition:transform 0.2s,border-color 0.2s;position:relative;animation:fadeUp 0.35s ease both;}
+.step-card:hover{transform:translateY(-2px);border-color:rgba(0,212,255,0.25);}
+.step-card.s-pass{border-color:rgba(0,255,136,0.35);background:rgba(0,255,136,0.04);}
+.step-card.s-fail{border-color:rgba(255,51,102,0.35);background:rgba(255,51,102,0.04);}
+.step-card.s-warn{border-color:rgba(255,107,53,0.35);background:rgba(255,107,53,0.04);}
+.step-card.s-skip{opacity:0.3;pointer-events:none;}
+.step-card.s-taco{border-color:rgba(255,69,0,0.5);background:rgba(255,69,0,0.06);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+.step-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.step-badge{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:9px;font-weight:900;flex-shrink:0;border:1px solid var(--border);background:var(--card2);color:var(--gray);}
+.step-card.s-pass .step-badge{background:rgba(0,255,136,0.15);color:var(--green);border-color:rgba(0,255,136,0.3);}
+.step-card.s-fail .step-badge{background:rgba(255,51,102,0.15);color:var(--red);border-color:rgba(255,51,102,0.3);}
+.step-card.s-warn .step-badge{background:rgba(255,107,53,0.15);color:var(--orange);border-color:rgba(255,107,53,0.3);}
+.step-card.s-taco .step-badge{background:rgba(255,69,0,0.2);color:var(--taco);border-color:rgba(255,69,0,0.4);}
+
+.step-title{font-size:12px;font-weight:700;color:var(--white);line-height:1.3;}
+.step-source{font-size:9px;color:var(--gray);font-family:'JetBrains Mono',monospace;margin-top:2px;}
+.step-status{position:absolute;top:12px;right:12px;font-size:9px;font-weight:700;font-family:'JetBrains Mono',monospace;letter-spacing:1px;}
+.step-card.s-pass .step-status{color:var(--green);}
+.step-card.s-fail .step-status{color:var(--red);}
+.step-card.s-warn .step-status{color:var(--orange);}
+.step-card.s-skip .step-status{color:var(--gray);}
+.step-card.s-taco .step-status{color:var(--taco);}
+
+.step-result{font-size:11px;color:var(--gray);line-height:1.5;margin-top:4px;min-height:30px;}
+.step-card.s-pass .step-result{color:#60B890;}
+.step-card.s-fail .step-result{color:#C85070;}
+.step-card.s-warn .step-result{color:#C87040;}
+.step-card.s-taco .step-result{color:#C86030;}
+
+.step-tags{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap;}
+.tag{padding:2px 7px;border-radius:4px;font-size:9px;font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:0.3px;}
+.tag-core{background:rgba(245,166,35,0.12);color:var(--gold);}
+.tag-cat{background:rgba(0,212,255,0.08);color:#60A8C8;}
+.tag-taco{background:rgba(255,69,0,0.15);color:var(--taco);}
+
+.score-panel{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px 24px;margin-bottom:20px;}
+.score-layout{display:flex;gap:24px;align-items:center;flex-wrap:wrap;}
+.score-circle{width:84px;height:84px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;border:3px solid var(--border);flex-shrink:0;transition:border-color 0.5s;}
+.score-num{font-family:'Orbitron',sans-serif;font-size:26px;font-weight:900;line-height:1;}
+.score-den{font-size:10px;color:var(--gray);font-family:'JetBrains Mono',monospace;}
+.score-info{flex:1;min-width:200px;}
+.score-verdict{font-size:14px;font-weight:700;margin-bottom:8px;}
+.score-bar-outer{height:6px;background:rgba(255,255,255,0.05);border-radius:3px;margin-bottom:8px;overflow:hidden;}
+.score-bar-inner{height:100%;border-radius:3px;transition:width 0.8s ease;}
+.score-detail{font-size:10px;color:var(--gray);font-family:'JetBrains Mono',monospace;}
+
+.action-box{margin-top:16px;padding:14px 18px;border-radius:10px;font-size:12px;line-height:1.8;border-left:3px solid;}
+.ab-buy{background:rgba(0,255,136,0.06);border-color:var(--green);color:#60C890;}
+.ab-watch{background:rgba(0,212,255,0.06);border-color:var(--cyan);color:#60A8C8;}
+.ab-caution{background:rgba(255,107,53,0.06);border-color:var(--orange);color:#C87040;}
+.ab-danger{background:rgba(255,51,102,0.06);border-color:var(--red);color:#C85070;}
+.ab-title{font-weight:700;margin-bottom:4px;font-family:'JetBrains Mono',monospace;letter-spacing:1px;font-size:10px;}
+
+.loading{text-align:center;padding:48px;display:none;}
+.loading.show{display:block;}
+.loading-text{font-family:'Orbitron',sans-serif;font-size:12px;color:var(--cyan);letter-spacing:2px;animation:blink 1s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+@media(max-width:780px){.steps-grid{grid-template-columns:repeat(2,1fr);}.taco-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:480px){.steps-grid{grid-template-columns:1fr;};}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="top-bar">
+  <div class="logo">STOCK <span>HEALTH CHECK</span></div>
+  <div class="clock" id="clock">--:--:--  TW</div>
+</div>
+
+<!-- 輸入 -->
+<div class="input-section">
+  <div class="input-row">
+    <div class="input-group">
+      <div class="input-label">股票代號</div>
+      <input class="stock-input" id="tickerInput" placeholder="ORCL" value="ORCL" onkeydown="if(event.key==='Enter')analyze()">
+    </div>
+    <div class="input-group">
+      <div class="input-label">市場</div>
+      <select class="market-select" id="marketSelect">
+        <option value="US">美股  US</option>
+        <option value="TW">台股  TW</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <div class="input-label">投資期間</div>
+      <div class="period-row">
+        <button class="period-btn p-day active" onclick="setPeriod('day',this)">當天</button>
+        <button class="period-btn p-short" onclick="setPeriod('short',this)">短線  1~2週</button>
+        <button class="period-btn p-mid" onclick="setPeriod('mid',this)">中線  3~6月</button>
+        <button class="period-btn p-long" onclick="setPeriod('long',this)">長線  1~1.5年</button>
+        <button class="period-btn p-ultra" onclick="setPeriod('ultra',this)">超長線  3年以上</button>
+      </div>
+    </div>
+    <button class="analyze-btn" onclick="analyze()">ANALYZE</button>
+  </div>
+  <div class="quick-row">
+    <span class="quick-label">QUICK :</span>
+    <button class="quick-tag" onclick="quickStock('ORCL','US')">ORCL 甲骨文</button>
+    <button class="quick-tag" onclick="quickStock('SMR','US')">SMR 核電</button>
+    <button class="quick-tag" onclick="quickStock('NVDA','US')">NVDA 輝達</button>
+    <button class="quick-tag" onclick="quickStock('PLTR','US')">PLTR 川普最愛</button>
+    <button class="quick-tag" onclick="quickStock('CRWV','US')">CRWV 大叔TOP1</button>
+    <button class="quick-tag" onclick="quickStock('TSM','US')">TSM 台積電</button>
+    <button class="quick-tag tw" onclick="quickStock('0050','TW')">TW  0050</button>
+    <button class="quick-tag tw" onclick="quickStock('00631L','TW')">TW  00631L</button>
+  </div>
+</div>
+
+<!-- 期間說明 -->
+<div class="period-info pi-day" id="periodInfo">
+  <div class="pi-title">當天模式  ( 1 ~ 3 天 )</div>
+  重點看當日技術訊號：黃藍梯子、量能爆量、MACD背馳、神奇九轉。TACO指標每個期間都要看！
+  <div class="pi-focus">
+    <span class="pi-focus-item">核心：技術面</span>
+    <span class="pi-focus-item">必看：TACO</span>
+    <span class="pi-focus-item">跳過：護城河、財務、總經邏輯</span>
+  </div>
+</div>
+
+<!-- TACO 橫幅 -->
+<div class="taco-banner" id="tacoBanner">
+  <div class="taco-header">
+    <div class="taco-badge">TACO</div>
+    <div>
+      <div class="taco-title">Trump Always Chickens Out  指標</div>
+      <div class="taco-subtitle">第 17 式  |  川普Truth Social發文 × 市場壓力指數  |  每個期間都適用</div>
+    </div>
+  </div>
+
+  <div class="taco-grid">
+    <div class="taco-item">
+      <div class="taco-item-label">S&P500 距高點</div>
+      <div class="taco-item-value" id="tacoSP" style="color:var(--orange)">-4.2%</div>
+      <div class="taco-item-desc">跌超5%川普開始慌</div>
+    </div>
+    <div class="taco-item">
+      <div class="taco-item-label">川普支持率</div>
+      <div class="taco-item-value" id="tacoApproval" style="color:var(--orange)">44%</div>
+      <div class="taco-item-desc">跌破45%壓力大增</div>
+    </div>
+    <div class="taco-item">
+      <div class="taco-item-label">通膨預期</div>
+      <div class="taco-item-value" id="tacoInflation" style="color:var(--red)">偏高</div>
+      <div class="taco-item-desc">通膨高迫使政策轉向</div>
+    </div>
+    <div class="taco-item">
+      <div class="taco-item-label">TACO 機率</div>
+      <div class="taco-item-value" id="tacoProbability" style="color:var(--green)">高</div>
+      <div class="taco-item-desc">大跌後反轉機率</div>
+    </div>
+  </div>
+
+  <div class="taco-signal taco-buy" id="tacoSignal">
+    <div class="taco-signal-title">TACO 操作訊號</div>
+    目前市場壓力偏高，TACO機率大。川普發極端威脅後市場下跌，歷史規律是好的買入點。逢跌佈局，等待政策轉向反彈。
+  </div>
+
+  <!-- 川普最新發文 -->
+  <div class="trump-posts">
+    <div style="font-size:10px;color:var(--gray);font-family:'JetBrains Mono',monospace;letter-spacing:1px;margin-bottom:8px;">TRUMP TRUTH SOCIAL  最新發文影響</div>
+    <div class="trump-post-item">
+      <div class="trump-post-meta">4/24  Truth Social  20次高頻發文</div>
+      川普就伊朗停火談判連發20則貼文，態度強硬但市場判斷為TACO前兆
+      <span class="trump-post-impact impact-bull">做多訊號</span>
+    </div>
+    <div class="trump-post-item">
+      <div class="trump-post-meta">4/10  Truth Social  川普點名PLTR</div>
+      「Palantir Technologies (PLTR) has proven to have great war fighting capabilities」  股價當日大漲
+      <span class="trump-post-impact impact-bull">PLTR強力做多</span>
+    </div>
+    <div class="trump-post-item">
+      <div class="trump-post-meta">4/8  伊朗停火宣布  2小時前</div>
+      川普宣布兩週停火，S&P500 + 1.5兆美元反彈，油價跌16%，TACO完美執行
+      <span class="trump-post-impact impact-bull">全面反彈</span>
+    </div>
+  </div>
+</div>
+
+<!-- Loading -->
+<div class="loading" id="loading">
+  <div class="loading-text">ANALYZING  17  STEPS ...</div>
+</div>
+
+<!-- 主體 -->
+<div id="stepsArea" style="display:none">
+
+  <div class="score-panel">
+    <div class="section-title">HEALTH SCORE</div>
+    <div class="score-layout">
+      <div class="score-circle" id="scoreCircle">
+        <div class="score-num" id="scoreNum">--</div>
+        <div class="score-den">/ 17</div>
+      </div>
+      <div class="score-info">
+        <div class="score-verdict" id="scoreVerdict">分析中</div>
+        <div class="score-bar-outer"><div class="score-bar-inner" id="scoreBar" style="width:0%"></div></div>
+        <div class="score-detail" id="scoreDetail">--</div>
+      </div>
+    </div>
+    <div class="action-box ab-watch" id="actionBox">
+      <div class="ab-title">操作建議</div>分析中...
+    </div>
+  </div>
+
+  <div class="section-title">17 STEPS DIAGNOSIS</div>
+
+  <div class="cat-tabs">
+    <button class="cat-tab active" onclick="filterSteps('all',this)">全部  17式</button>
+    <button class="cat-tab" onclick="filterSteps('tech',this)">技術面</button>
+    <button class="cat-tab" onclick="filterSteps('fund',this)">基本面</button>
+    <button class="cat-tab" onclick="filterSteps('macro',this)">總經面</button>
+    <button class="cat-tab" onclick="filterSteps('sentiment',this)">情緒指標</button>
+    <button class="cat-tab taco-tab" onclick="filterSteps('taco',this)">TACO 川普指標</button>
+  </div>
+
+  <div class="steps-grid" id="stepsGrid"></div>
+
+</div>
+</div>
+
+<script>
+let currentPeriod='day';
+
+const STEPS=[
+  {id:1,num:'01',cat:'tech',name:'黃藍梯子',source:'CINDY / TodayChart',desc:'黃線（短均線MA5）在藍線（長均線MA20）上方為多頭，下方空頭',pass:'黃線在藍線上方，多頭趨勢確認，順勢做多',fail:'黃線跌破藍線，空頭趨勢，謹慎或減倉',warn:'黃藍交叉中，趨勢轉換期，等待確認'},
+  {id:2,num:'02',cat:'tech',name:'神奇九轉',source:'CINDY / Tom DeMark',desc:'連續9天收盤高於4天前=頂部訊號，低於4天前=底部訊號',pass:'下跌9轉完成，底部反轉訊號，可考慮進場',fail:'上漲9轉完成，頂部訊號，考慮減倉',warn:'九轉序列進行中，持續觀察'},
+  {id:3,num:'03',cat:'tech',name:'海底撈月',source:'CINDY / TodayChart',desc:'RSI極低加量縮代表底部，出現大底中底小底柱為進場訊號',pass:'RSI低於30且量縮，底部訊號，可考慮布局',fail:'RSI高於70，市場過熱，注意回調',warn:'RSI介於30到50，觀察量能'},
+  {id:4,num:'04',cat:'tech',name:'MACD背馳',source:'CINDY / 技術分析',desc:'價格創新低但MACD不創新低為底背馳，下跌動能衰減',pass:'MACD底背馳確認，即將反轉，進場時機',fail:'MACD頂背馳，上漲動能衰減，考慮減倉',warn:'MACD無明顯背馳，維持現有操作'},
+  {id:5,num:'05',cat:'tech',name:'RSI 強弱',source:'技術分析基礎',desc:'RSI高於70超買，低於30超賣，50以上偏多頭',pass:'RSI位於50到70健康多頭區間，趨勢強勢',fail:'RSI高於80或低於20，極端區域',warn:'RSI位於40到50中性區間，方向不明'},
+  {id:6,num:'06',cat:'tech',name:'量能爆量',source:'鯨魚偵測 / 暗池',desc:'成交量超過均量2倍代表鯨魚進場，方向比量更重要',pass:'爆量加上漲，鯨魚吸籌，主力進場',fail:'爆量加下跌，鯨魚出貨，主力撤退',warn:'量能平穩，無明顯主力動向'},
+  {id:7,num:'07',cat:'tech',name:'支撐壓力位',source:'CINDY / 斐波那契',desc:'斐波那契0.618關鍵位，支撐S1 S2 S3三層，跌破S3勿接刀',pass:'守住支撐S1，趨勢仍然強勢',fail:'跌破S3支撐，不要接刀等待企穩',warn:'位於S2到S3之間，謹慎觀察'},
+  {id:8,num:'08',cat:'tech',name:'200日均線',source:'技術分析 / 大跌心智圖',desc:'200日均線是多空分水嶺，守住為健康洗盤，跌破趨勢轉壞',pass:'守在200日均線上方，長期趨勢健康',fail:'跌破200日均線，趨勢轉壞，謹慎',warn:'在200日均線附近測試，觀察能否守住'},
+  {id:9,num:'09',cat:'tech',name:'布林通道',source:'技術分析基礎',desc:'布林上下軌代表正常波動範圍，突破上軌為強勢',pass:'突破布林上軌，強勢突破，動能充足',fail:'跌破布林下軌，弱勢破位，注意止損',warn:'在布林中軌附近盤整，等待突破'},
+  {id:10,num:'10',cat:'fund',name:'護城河檢驗',source:'大跌心智圖 / 公司壞了嗎',desc:'公司核心競爭力是否仍然存在，護城河有沒有遭到侵蝕',pass:'護城河穩固，市場地位未動搖',fail:'護城河遭侵蝕，核心競爭力受威脅',warn:'需要持續關注競爭態勢'},
+  {id:11,num:'11',cat:'fund',name:'財務健康',source:'大跌心智圖 / 數據壞了嗎',desc:'現金流、負債比、營收成長率，公司財務體質是否正常',pass:'財務健康，現金充裕，負債可控',fail:'財務出現異常，注意流動性風險',warn:'財務中性，等待下一季財報確認'},
+  {id:12,num:'12',cat:'fund',name:'產業趨勢',source:'長線邏輯 / 大叔邏輯',desc:'公司所在產業是否仍然具有長期成長性',pass:'產業趨勢明確向上，需求持續增長',fail:'產業進入衰退或遭遇顛覆性競爭',warn:'產業趨勢需要持續觀察'},
+  {id:13,num:'13',cat:'sentiment',name:'DIX 暗池',source:'大跌心智圖 / 系統壞了嗎',desc:'DIX高於45代表主力暗中接盤，背離訊號為底部機會',pass:'DIX高於45，主力在低點暗中買入，偏多',fail:'DIX低於35，主力也在賣，跌勢可能未止',warn:'DIX中性，主力動向不明'},
+  {id:14,num:'14',cat:'sentiment',name:'VIX 恐慌指數',source:'大跌心智圖 / 情緒指標',desc:'VIX低於20樂觀，20到30不安，高於30極度恐慌，爆表=底部',pass:'VIX低於20，市場穩定樂觀，適合持倉',fail:'VIX高於35，極度恐慌，不適合加碼',warn:'VIX介於20到30，市場不安，謹慎'},
+  {id:15,num:'15',cat:'macro',name:'總經環境',source:'大跌心智圖 / 總經指標',desc:'美元DXY、美債US10Y、CPI、NFP、FOMC五大指標綜合判斷',pass:'總經環境有利，升息循環結束或已降息，偏多',fail:'CPI高於預期或聯準會偏鷹，對股市不利',warn:'總經信號混合，等待更多數據確認'},
+  {id:16,num:'16',cat:'macro',name:'總經邏輯三問',source:'大跌心智圖 / 投資心態',desc:'數據壞了嗎、公司壞了嗎、系統壞了嗎，三者沒壞大跌是雜訊',pass:'三者都沒壞，大跌只是短暫雜訊，繼續持有',fail:'三者之中有一個出問題，需重新評估',warn:'部分邏輯存疑，小幅減倉保持觀察'},
+  // TACO 第17式
+  {id:17,num:'17',cat:'taco',name:'TACO 川普指標',source:'Trump Always Chickens Out / Wall Street',desc:'川普發出極端威脅後市場下跌，歷史規律是：壓力越大越快TACO。跌超5%是買點，等政策反轉',pass:'TACO機率高！市場壓力大，川普快TACO，逢跌是好買點',fail:'川普立場強硬暫時不TACO，小心繼續下跌，先觀望',warn:'TACO訊號混合，等待Truth Social關鍵發文確認'}
+];
+
+const PERIODS={
+  day:{label:'當天模式  ( 1 ~ 3 天 )',piClass:'pi-day',desc:'重點看當日技術訊號：黃藍梯子、量能爆量、MACD背馳、神奇九轉。TACO指標每個期間都要看！',focus:'核心：技術面  |  必看：TACO  |  跳過：護城河、財務、總經邏輯',core:[1,2,4,6,9,17],ref:[3,5,7,8,13,14],skip:[10,11,12,15,16],adv:{buy:'短線訊號良好，若大盤配合可短進操作，停損設 -3%。TACO機率高時逢跌佈局效果更好。',watch:'訊號混合，建議觀望或小倉試水。注意川普Truth Social發文。',danger:'短線訊號偏弱，等待訊號改善。除非TACO訊號強烈否則不進場。'}},
+  short:{label:'短線模式  ( 1 ~ 2 週 )',piClass:'pi-short',desc:'黃藍梯子 + 神奇九轉 + 海底撈月三重確認最重要。TACO高機率時是最佳進場窗口。',focus:'核心：黃藍梯子、神奇九轉、海底撈月、量能、TACO  |  參考：MACD、支撐位  |  跳過：基本面',core:[1,2,3,4,6,7,13,14,17],ref:[5,8,9,15],skip:[10,11,12,16],adv:{buy:'短線三重確認通過加TACO機率高，可以布局進場，目標 5 到 10% 獲利了結。',watch:'部分訊號通過，等待支撐守住或TACO訊號更明確。',danger:'短線訊號不佳，TACO機率低，建議觀望。'}},
+  mid:{label:'中線模式  ( 3 ~ 6 個月 )',piClass:'pi-mid',desc:'技術面 + 基本面 + 情緒指標全納入考量。TACO邏輯中線依然有效，大跌後TACO反轉是加倉機會。',focus:'核心：黃藍梯子、200均線、護城河、財務、DIX、TACO  |  參考：全部  |  跳過：無',core:[1,7,8,10,11,13,16,17],ref:[2,3,4,5,6,9,12,14,15],skip:[],adv:{buy:'中線條件優秀，護城河穩固加TACO環境有利，可以建立中線倉位，目標 20 到 40%。',watch:'中線條件混合，分批建倉，控制在總倉位 30% 以內。',danger:'中線基本面有疑慮，先觀望等財報確認。'}},
+  long:{label:'長線模式  ( 1 ~ 1.5 年 )',piClass:'pi-long',desc:'護城河 + 產業趨勢 + 總經邏輯是核心。TACO製造的大跌是長線投資者的加倉機會，不是恐慌的理由。',focus:'核心：護城河、產業趨勢、總經邏輯、200均線  |  必看：TACO逢跌加碼邏輯  |  跳過：短線技術',core:[8,10,11,12,15,16,17],ref:[1,6,7,13,14],skip:[2,4,5,9],adv:{buy:'長線邏輯紮實，TACO造成的大跌是加倉機會，放心長期持有。',watch:'長線邏輯部分成立，分批建倉，TACO大跌時加碼。',danger:'長線邏輯出現裂縫，需重新評估，TACO反彈是減倉機會。'}},
+  ultra:{label:'超長線模式  ( 3 年以上 )',piClass:'pi-ultra',desc:'只問三件事：產業有沒有未來、護城河夠不夠深、財務有沒有倒閉風險。TACO製造的崩盤是超長線的禮物。',focus:'核心：產業趨勢、護城河、財務健康、總經邏輯三問  |  TACO崩盤=分批佈局機會  |  跳過：技術指標',core:[10,11,12,16,17],ref:[8,15],skip:[1,2,3,4,5,6,7,9,13,14],adv:{buy:'超長線邏輯確立！TACO造成的大跌是最好的建倉機會，分批買入持有3年。',watch:'超長線條件部分成立，先建基礎倉位，TACO時加碼。',danger:'超長線邏輯存疑，TACO反彈反而是離場機會。'}}
+};
+
+const STOCK_MAPS={
+  ORCL:{1:'pass',2:'warn',3:'pass',4:'pass',5:'warn',6:'warn',7:'pass',8:'pass',9:'warn',10:'pass',11:'pass',12:'pass',13:'warn',14:'pass',15:'warn',16:'pass',17:'pass'},
+  ORCX:{1:'pass',2:'warn',3:'pass',4:'pass',5:'warn',6:'warn',7:'pass',8:'pass',9:'warn',10:'pass',11:'pass',12:'pass',13:'warn',14:'pass',15:'warn',16:'pass',17:'pass'},
+  SMR:{1:'fail',2:'pass',3:'pass',4:'pass',5:'pass',6:'warn',7:'fail',8:'fail',9:'pass',10:'warn',11:'pass',12:'pass',13:'warn',14:'warn',15:'warn',16:'pass',17:'pass'},
+  SMUP:{1:'fail',2:'pass',3:'pass',4:'pass',5:'pass',6:'warn',7:'fail',8:'fail',9:'pass',10:'warn',11:'pass',12:'pass',13:'warn',14:'warn',15:'warn',16:'pass',17:'pass'},
+  NVDA:{1:'pass',2:'warn',3:'warn',4:'pass',5:'warn',6:'pass',7:'pass',8:'pass',9:'pass',10:'pass',11:'pass',12:'pass',13:'warn',14:'pass',15:'warn',16:'pass',17:'pass'},
+  PLTR:{1:'pass',2:'warn',3:'warn',4:'pass',5:'pass',6:'pass',7:'pass',8:'pass',9:'pass',10:'pass',11:'pass',12:'pass',13:'pass',14:'pass',15:'warn',16:'pass',17:'pass'},
+  CRWV:{1:'pass',2:'warn',3:'warn',4:'warn',5:'warn',6:'pass',7:'warn',8:'warn',9:'warn',10:'pass',11:'warn',12:'pass',13:'warn',14:'pass',15:'warn',16:'pass',17:'warn'},
+  TSM:{1:'pass',2:'warn',3:'warn',4:'pass',5:'pass',6:'pass',7:'pass',8:'pass',9:'pass',10:'pass',11:'pass',12:'pass',13:'pass',14:'pass',15:'pass',16:'pass',17:'pass'},
+  '0050':{1:'pass',2:'warn',3:'pass',4:'pass',5:'pass',6:'pass',7:'pass',8:'pass',9:'pass',10:'pass',11:'pass',12:'pass',13:'pass',14:'pass',15:'pass',16:'pass',17:'pass'},
+  '00631L':{1:'pass',2:'warn',3:'pass',4:'pass',5:'pass',6:'pass',7:'pass',8:'pass',9:'pass',10:'pass',11:'pass',12:'pass',13:'pass',14:'pass',15:'pass',16:'pass',17:'pass'}
+};
+
+function simulate(ticker,market,period){
+  const p=PERIODS[period],map=STOCK_MAPS[ticker]||null,results=[];
+  STEPS.forEach(step=>{
+    if(p.skip.includes(step.id)){
+      results.push({...step,status:'skip',resultText:'此投資期間不適用',isCore:false});return;
+    }
+    const isCore=p.core.includes(step.id);
+    const r=Math.random();
+    let status=map?map[step.id]:(r>0.55?'pass':r>0.3?'warn':'fail');
+    // TACO第17式特殊樣式
+    if(step.id===17&&status==='pass') status='taco';
+    else if(step.id===17&&status==='warn') status='warn';
+    results.push({...step,status,resultText:step[status==='taco'?'pass':status]||step.warn,isCore});
+  });
+  return results;
+}
+
+function calcScore(results){
+  const active=results.filter(r=>r.status!=='skip');
+  let pass=0,fail=0,warn=0,ws=0,ms=0;
+  active.forEach(r=>{const w=r.isCore?2:1;ms+=w;
+    const s=r.status;
+    if(s==='pass'||s==='taco'){pass++;ws+=w;}
+    else if(s==='warn'){warn++;ws+=w*0.5;}
+    else fail++;
+  });
+  return{pass,fail,warn,active:active.length,pct:ms>0?ws/ms:0};
+}
+
+function renderSteps(results){
+  const grid=document.getElementById('stepsGrid');
+  grid.innerHTML='';
+  results.forEach((r,i)=>{
+    const d=document.createElement('div');
+    const s=r.status;
+    d.className='step-card s-'+s;
+    d.style.animationDelay=(i*0.03)+'s';
+    d.dataset.cat=r.cat;
+    const stLabel={pass:'PASS',fail:'FAIL',warn:'NOTE',skip:'SKIP',taco:'TACO'}[s]||'';
+    const tags=[];
+    if(r.isCore&&s!=='skip')tags.push('<span class="tag tag-core">CORE</span>');
+    if(r.cat==='taco')tags.push('<span class="tag tag-taco">TRUMP</span>');
+    const catLabel={tech:'技術面',fund:'基本面',macro:'總經面',sentiment:'情緒指標',taco:'TACO'}[r.cat]||'';
+    if(catLabel&&r.cat!=='taco')tags.push('<span class="tag tag-cat">'+catLabel+'</span>');
+    d.innerHTML=`<div class="step-status">${stLabel}</div>
+      <div class="step-header"><div class="step-badge">${r.num}</div><div><div class="step-title">${r.name}</div><div class="step-source">${r.source}</div></div></div>
+      <div class="step-result">${r.resultText}</div>
+      <div class="step-tags">${tags.join('')}</div>`;
+    d.onclick=()=>alert('['+r.num+']  '+r.name+'\n\n說明：'+r.desc+'\n\nPASS：'+r.pass+'\nNOTE：'+r.warn+'\nFAIL：'+r.fail);
+    grid.appendChild(d);
+  });
+}
+
+function renderScore(score,period){
+  const p=PERIODS[period];
+  const{pass,fail,warn,active,pct}=score;
+  document.getElementById('scoreNum').textContent=pass;
+  document.getElementById('scoreDetail').textContent='PASS '+pass+'   NOTE '+warn+'   FAIL '+fail+'   TOTAL '+active;
+  setTimeout(()=>{document.getElementById('scoreBar').style.width=(pct*100)+'%';},100);
+  let color,verdict,cls,title,text;
+  if(pct>=0.75){color='var(--green)';verdict='優良  —  強力建議';cls='ab-buy';title='建議操作';text=p.adv.buy;}
+  else if(pct>=0.5){color='var(--cyan)';verdict='中等  —  可以考慮';cls='ab-watch';title='建議觀望';text=p.adv.watch;}
+  else if(pct>=0.3){color='var(--orange)';verdict='偏弱  —  謹慎操作';cls='ab-caution';title='謹慎建議';text=p.adv.watch;}
+  else{color='var(--red)';verdict='不建議  —  風險過高';cls='ab-danger';title='風險警示';text=p.adv.danger;}
+  document.getElementById('scoreNum').style.color=color;
+  document.getElementById('scoreCircle').style.borderColor=color;
+  document.getElementById('scoreVerdict').style.color=color;
+  document.getElementById('scoreVerdict').textContent=verdict;
+  document.getElementById('scoreBar').style.background=color;
+  const box=document.getElementById('actionBox');
+  box.className='action-box '+cls;
+  box.innerHTML='<div class="ab-title">'+title+'</div>'+text;
+}
+
+function analyze(){
+  const ticker=document.getElementById('tickerInput').value.trim().toUpperCase();
+  const market=document.getElementById('marketSelect').value;
+  if(!ticker)return;
+  document.getElementById('loading').classList.add('show');
+  document.getElementById('stepsArea').style.display='none';
+  setTimeout(()=>{
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('stepsArea').style.display='block';
+    const results=simulate(ticker,market,currentPeriod);
+    renderSteps(results);
+    renderScore(calcScore(results),currentPeriod);
+  },900);
+}
+
+function setPeriod(period,btn){
+  currentPeriod=period;
+  document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const p=PERIODS[period];
+  const info=document.getElementById('periodInfo');
+  info.className='period-info '+p.piClass;
+  const focusParts=p.focus.split('  |  ');
+  info.innerHTML='<div class="pi-title">'+p.label+'</div>'+p.desc+'<div class="pi-focus">'+focusParts.map(f=>'<span class="pi-focus-item">'+f+'</span>').join('')+'</div>';
+}
+
+function quickStock(ticker,market){
+  document.getElementById('tickerInput').value=ticker;
+  document.getElementById('marketSelect').value=market;
+  analyze();
+}
+
+function filterSteps(cat,btn){
+  document.querySelectorAll('.cat-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.step-card').forEach(card=>{
+    card.style.display=(cat==='all'||card.dataset.cat===cat)?'':'none';
+  });
+}
+
+function updateClock(){
+  const now=new Date();
+  const tw=new Date(now.getTime()+(8*60+now.getTimezoneOffset())*60000);
+  document.getElementById('clock').textContent=tw.toTimeString().slice(0,8)+'  TW';
+}
+
+window.onload=function(){updateClock();setInterval(updateClock,1000);analyze();};
+</script>
+</body>
+</html>

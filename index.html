@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>美股神器 | 股票追蹤訂閱系統</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#020A14;--card:#071525;--gold:#F5A623;--cyan:#00D4FF;--green:#00FF88;--white:#E8F4FD;--gray:#4A6580;--border:rgba(0,212,255,0.12);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--white);font-family:'Noto Sans TC',sans-serif;min-height:100vh;}
+.hero{text-align:center;padding:80px 20px 60px;background:radial-gradient(ellipse at 50% 0%,rgba(0,212,255,0.08) 0%,transparent 60%);}
+.hero-badge{display:inline-block;padding:6px 20px;border-radius:20px;border:1px solid rgba(0,212,255,0.3);font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan);letter-spacing:2px;margin-bottom:24px;}
+.hero h1{font-family:'Orbitron',sans-serif;font-size:36px;font-weight:900;color:var(--gold);margin-bottom:16px;letter-spacing:2px;text-shadow:0 0 30px rgba(245,166,35,0.3);}
+.hero p{font-size:16px;color:var(--gray);line-height:1.8;max-width:480px;margin:0 auto 40px;}
+.tools-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;max-width:700px;margin:0 auto;padding:0 20px;}
+.tool-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px 24px;text-decoration:none;color:inherit;transition:all 0.3s;display:block;}
+.tool-card:hover{transform:translateY(-4px);border-color:rgba(0,212,255,0.4);box-shadow:0 8px 32px rgba(0,212,255,0.1);}
+.tool-num{font-family:'Orbitron',sans-serif;font-size:11px;color:var(--cyan);letter-spacing:2px;margin-bottom:12px;}
+.tool-title{font-size:18px;font-weight:700;color:var(--gold);margin-bottom:8px;}
+.tool-desc{font-size:12px;color:var(--gray);line-height:1.7;}
+.tool-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px;}
+.tag{padding:3px 10px;border-radius:4px;font-size:10px;font-family:'JetBrains Mono',monospace;font-weight:700;background:rgba(0,212,255,0.08);color:var(--cyan);}
+.tag.gold{background:rgba(245,166,35,0.1);color:var(--gold);}
+.tag.green{background:rgba(0,255,136,0.1);color:var(--green);}
+.tag.red{background:rgba(255,69,0,0.1);color:#FF4500;}
+.plans{max-width:700px;margin:60px auto 0;padding:0 20px;}
+.plans-title{font-family:'Orbitron',sans-serif;font-size:12px;color:var(--gold);letter-spacing:3px;margin-bottom:20px;display:flex;align-items:center;gap:10px;}
+.plans-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent);}
+.plans-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.plan-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;}
+.plan-name{font-size:11px;color:var(--gray);font-family:'JetBrains Mono',monospace;margin-bottom:8px;}
+.plan-price{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;color:var(--gold);}
+.plan-unit{font-size:10px;color:var(--gray);}
+.plan-stocks{font-size:11px;color:var(--cyan);margin-top:8px;}
+.plan-features{font-size:10px;color:var(--gray);line-height:1.7;margin-top:8px;}
+.line-section{max-width:700px;margin:40px auto 60px;padding:0 20px;}
+.line-card{background:linear-gradient(135deg,rgba(0,185,0,0.08),rgba(0,185,0,0.04));border:1px solid rgba(0,185,0,0.25);border-radius:16px;padding:24px;text-align:center;}
+.line-title{font-size:16px;font-weight:700;color:#00C300;margin-bottom:8px;}
+.line-desc{font-size:12px;color:var(--gray);margin-bottom:16px;line-height:1.8;}
+.line-btn{display:inline-block;padding:12px 32px;background:#00C300;border-radius:8px;color:white;font-weight:700;font-size:14px;text-decoration:none;transition:opacity 0.2s;}
+.line-btn:hover{opacity:0.85;}
+footer{text-align:center;padding:30px;font-size:10px;color:var(--gray);font-family:'JetBrains Mono',monospace;border-top:1px solid var(--border);}
+@media(max-width:600px){.hero h1{font-size:24px;}.tools-grid{grid-template-columns:1fr;}.plans-grid{grid-template-columns:repeat(2,1fr);}}
+</style>
+</head>
+<body>
+<div class="hero">
+  <div class="hero-badge">STOCK SYSTEM  v5.0</div>
+  <h1>美股神器</h1>
+  <p>上班族沒時間看盤？<br>每天早上直接推播你的個人化股票分析<br>傳截圖就能自動識別持股，完全不用手動操作</p>
+</div>
+
+<div class="tools-grid">
+  <a class="tool-card" href="web/stock_12steps.html">
+    <div class="tool-num">TOOL  01</div>
+    <div class="tool-title">股票健診 17式</div>
+    <div class="tool-desc">輸入任何股票代號，選擇投資期間，一鍵完成完整分析。美股台股都支援。</div>
+    <div class="tool-tags">
+      <span class="tag">技術面 9式</span>
+      <span class="tag">基本面</span>
+      <span class="tag gold">TACO 第17式</span>
+    </div>
+  </a>
+  <a class="tool-card" href="web/dashboard_v5.html">
+    <div class="tool-num">TOOL  02</div>
+    <div class="tool-title">持倉主控台</div>
+    <div class="tool-desc">即時大盤、持倉損益、DIX暗池、鯨魚偵測一覽無遺。</div>
+    <div class="tool-tags">
+      <span class="tag">即時股價</span>
+      <span class="tag green">DIX 暗池</span>
+      <span class="tag">鯨魚偵測</span>
+    </div>
+  </a>
+</div>
+
+<div class="plans">
+  <div class="plans-title">SUBSCRIPTION PLANS</div>
+  <div class="plans-grid">
+    <div class="plan-card">
+      <div class="plan-name">試用版</div>
+      <div class="plan-price">免費</div>
+      <div class="plan-unit">7天</div>
+      <div class="plan-stocks">追蹤 2 支</div>
+      <div class="plan-features">每日快報</div>
+    </div>
+    <div class="plan-card" style="border-color:rgba(245,166,35,0.3)">
+      <div class="plan-name">基礎版</div>
+      <div class="plan-price" style="font-size:16px">59</div>
+      <div class="plan-unit">元 / 月</div>
+      <div class="plan-stocks">追蹤 3 支</div>
+      <div class="plan-features">每日快報<br>截圖識別持股</div>
+    </div>
+    <div class="plan-card" style="border-color:rgba(0,212,255,0.3)">
+      <div class="plan-name">進階版</div>
+      <div class="plan-price" style="font-size:16px;color:var(--cyan)">99</div>
+      <div class="plan-unit">元 / 月</div>
+      <div class="plan-stocks">追蹤 8 支</div>
+      <div class="plan-features">AI深度分析<br>17式健診<br>TACO指標</div>
+    </div>
+    <div class="plan-card" style="border-color:rgba(0,255,136,0.3)">
+      <div class="plan-name">VIP版</div>
+      <div class="plan-price" style="font-size:16px;color:var(--green)">199</div>
+      <div class="plan-unit">元 / 月</div>
+      <div class="plan-stocks">追蹤 20 支</div>
+      <div class="plan-features">全部功能<br>台股美股<br>盤前盤後通知</div>
+    </div>
+  </div>
+</div>
+
+<div class="line-section">
+  <div class="line-card">
+    <div class="line-title">加入 LINE 開始使用</div>
+    <div class="line-desc">加好友後傳券商截圖，系統自動識別你的持股<br>每天早上8:30收到個人化分析，不用自己看盤</div>
+    <a class="line-btn" href="https://line.me/R/ti/p/@368ceoiv" target="_blank">加入 LINE  @368ceoiv</a>
+  </div>
+</div>
+
+<footer>STOCK SYSTEM v5.0  |  美股神器訂閱系統  |  每天幫你看盤</footer>
+</body>
+</html>
