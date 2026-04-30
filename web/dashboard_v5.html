@@ -3,639 +3,809 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>美股神器 — 我的持股總覽</title>
+<title>美股神器 · PORTFOLIO MATRIX</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
-    background: #0A1E35;
-    color: #FFFFFF;
-    min-height: 100vh;
-    padding: 16px;
-  }
-  .container { max-width: 960px; margin: 0 auto; }
+:root {
+  --bg: #05080F;
+  --bg2: #0A0E1A;
+  --line: #1a2540;
+  --neon-cyan: #00FFD9;
+  --neon-pink: #FF2E63;
+  --neon-green: #00FF88;
+  --neon-yellow: #FFD93D;
+  --text: #E8F0FF;
+  --text-dim: #6B7A9F;
+  --text-faint: #3A4868;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'JetBrains Mono', 'Noto Sans TC', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 24px 16px;
+  background-image:
+    linear-gradient(rgba(0, 255, 217, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 217, 0.025) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.container { max-width: 1100px; margin: 0 auto; }
 
-  /* 頂部 */
-  .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .header h1 {
-    color: #F5A623;
-    font-size: 22px;
-    font-weight: 700;
-  }
-  .header .subtitle {
-    color: #a8b8c8;
-    font-size: 13px;
-    margin-top: 2px;
-  }
-  .refresh-btn {
-    background: #1a2e45;
-    color: #F5A623;
-    border: 1px solid #F5A623;
-    padding: 8px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 13px;
-    transition: 0.2s;
-  }
-  .refresh-btn:hover { background: #F5A623; color: #0A1E35; }
-  .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.brand {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: 28px;
+  letter-spacing: 2px;
+  color: var(--text);
+}
+.brand .nf { color: var(--neon-pink); }
+.brand .en { color: var(--neon-cyan); margin-left: 6px; }
+.clock {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--neon-cyan);
+  font-size: 14px;
+  letter-spacing: 2px;
+}
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--neon-cyan) 20%, var(--neon-cyan) 80%, transparent);
+  opacity: 0.4;
+  margin-bottom: 20px;
+}
 
-  /* 市場狀態徽章 */
-  .market-bar {
-    background: #1a2e45;
-    border-radius: 12px;
-    padding: 14px 20px;
-    margin-bottom: 16px;
-    display: flex;
-    flex-wrap: wrap;
+.status-bar {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  padding: 12px 18px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  letter-spacing: 1px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.status-bar .label { color: var(--text-dim); }
+.status-bar .val { color: var(--text); margin-left: 6px; font-weight: 500; }
+.status-bar .ok { color: var(--neon-green); font-weight: 700; }
+.status-bar .err { color: var(--neon-pink); font-weight: 700; }
+.btn-refresh {
+  font-family: 'Orbitron', sans-serif;
+  background: transparent;
+  color: var(--neon-cyan);
+  border: 1px solid var(--neon-cyan);
+  padding: 6px 16px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  font-size: 11px;
+}
+.btn-refresh:hover { background: var(--neon-cyan); color: var(--bg); }
+.btn-refresh:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Market badges */
+.market-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.mkt-badge {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 11px;
+  letter-spacing: 2px;
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  background: var(--bg2);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-dim);
+}
+.mkt-badge.live { color: var(--neon-green); border-color: var(--neon-green); }
+.mkt-badge.live .dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--neon-green);
+  animation: pulse 1.5s infinite;
+}
+.mkt-badge.warn { color: var(--neon-yellow); border-color: var(--neon-yellow); }
+.mkt-badge.dst  { color: var(--neon-pink); border-color: var(--neon-pink); }
+.mkt-badge.fx   { color: var(--neon-cyan); border-color: var(--neon-cyan); }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* Section header */
+.section-h {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 4px;
+  color: var(--neon-cyan);
+  margin: 24px 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.section-h::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--neon-cyan), transparent);
+  opacity: 0.4;
+}
+
+/* Market grid */
+.market-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.mkt-card {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  padding: 16px 18px;
+  border-left: 3px solid var(--neon-cyan);
+}
+.mkt-card.up   { border-left-color: var(--neon-green); }
+.mkt-card.down { border-left-color: var(--neon-pink); }
+.mkt-card.flat { border-left-color: var(--text-faint); }
+.mkt-card .mck {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+.mkt-card .mcp {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: 22px;
+  color: var(--text);
+  letter-spacing: 1px;
+}
+.mkt-card .mcd {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-top: 2px;
+}
+.mcd.up   { color: var(--neon-green); }
+.mcd.down { color: var(--neon-pink); }
+.mcd.flat { color: var(--text-dim); }
+
+/* Summary panel */
+.summary {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  padding: 22px 26px;
+  margin-bottom: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+.summary .sk {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.summary .sv {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: 24px;
+  letter-spacing: 1px;
+}
+.summary .sv.up   { color: var(--neon-green); }
+.summary .sv.down { color: var(--neon-pink); }
+.summary .sv.flat { color: var(--text); }
+.summary .sv.big { font-size: 28px; }
+.summary .sub-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  letter-spacing: 1px;
+}
+
+/* Holdings table */
+.h-row {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  padding: 16px 20px;
+  margin-bottom: 8px;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1.2fr 28px;
+  gap: 14px;
+  align-items: center;
+  cursor: pointer;
+  transition: 0.15s;
+  border-left: 3px solid var(--text-faint);
+}
+.h-row:hover {
+  border-color: var(--neon-cyan);
+  border-left-color: var(--neon-cyan);
+}
+.h-row.up   { border-left-color: var(--neon-green); }
+.h-row.down { border-left-color: var(--neon-pink); }
+.h-row.flat { border-left-color: var(--text-faint); }
+.h-ticker {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: 18px;
+  letter-spacing: 2px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.h-shares {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  letter-spacing: 1px;
+}
+.session-tag {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 9px;
+  letter-spacing: 2px;
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+}
+.session-tag.PRE  { color: var(--neon-yellow); border-color: var(--neon-yellow); }
+.session-tag.POST { color: var(--neon-yellow); border-color: var(--neon-yellow); }
+.session-tag.REGULAR { color: var(--neon-green); border-color: var(--neon-green); }
+.h-col-k {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+.h-price {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 1px;
+}
+.h-pct {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+.h-pct.up   { color: var(--neon-green); }
+.h-pct.down { color: var(--neon-pink); }
+.h-pct.flat { color: var(--text-dim); }
+.h-profit-main {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: 16px;
+  letter-spacing: 1px;
+}
+.h-profit-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  margin-top: 2px;
+  letter-spacing: 1px;
+}
+.h-profit-main.up,   .h-profit-sub.up   { color: var(--neon-green); }
+.h-profit-main.down, .h-profit-sub.down { color: var(--neon-pink); }
+.h-profit-main.flat, .h-profit-sub.flat { color: var(--text-dim); }
+.h-arrow {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 22px;
+  color: var(--neon-cyan);
+  text-align: right;
+}
+
+/* State */
+.state-box {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  padding: 50px 24px;
+  text-align: center;
+  margin: 16px 0;
+}
+.state-box.error { border-color: var(--neon-pink); }
+.state-box .msg {
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--neon-cyan);
+  font-size: 14px;
+  margin-top: 16px;
+}
+.state-box.error .msg { color: var(--neon-pink); }
+.state-box .sub {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 8px;
+  letter-spacing: 1px;
+  line-height: 1.7;
+}
+.spinner {
+  display: inline-block;
+  width: 36px; height: 36px;
+  border: 2px solid var(--line);
+  border-top-color: var(--neon-cyan);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.btn-retry, .btn-change {
+  font-family: 'Orbitron', sans-serif;
+  background: transparent;
+  color: var(--neon-cyan);
+  border: 1px solid var(--neon-cyan);
+  padding: 8px 20px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  font-size: 12px;
+  margin: 16px 6px 0;
+}
+.btn-retry:hover, .btn-change:hover { background: var(--neon-cyan); color: var(--bg); }
+
+/* Modal */
+.modal-bg {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+.modal-bg.show { display: flex; }
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--neon-cyan);
+  padding: 28px 32px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 0 40px rgba(0, 255, 217, 0.15);
+}
+.modal h2 {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: 18px;
+  letter-spacing: 3px;
+  color: var(--neon-cyan);
+  margin-bottom: 8px;
+}
+.modal h2 .zh {
+  font-family: 'Noto Sans TC', sans-serif;
+  font-size: 14px;
+  letter-spacing: 1px;
+  color: var(--text);
+  margin-left: 8px;
+}
+.modal p {
+  font-family: 'Noto Sans TC', sans-serif;
+  color: var(--text-dim);
+  font-size: 12px;
+  margin-bottom: 16px;
+  line-height: 1.7;
+  letter-spacing: 1px;
+}
+.modal input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: 12px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 1px;
+  margin-bottom: 14px;
+  outline: none;
+}
+.modal input:focus { border-color: var(--neon-cyan); }
+.modal button {
+  width: 100%;
+  background: var(--neon-cyan);
+  color: var(--bg);
+  border: none;
+  padding: 12px;
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: 13px;
+  letter-spacing: 4px;
+  cursor: pointer;
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+}
+.modal button:hover { background: #fff; }
+
+.footer {
+  text-align: center;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 3px;
+  color: var(--text-faint);
+  font-size: 10px;
+  margin-top: 40px;
+  padding: 16px;
+}
+
+@media (max-width: 720px) {
+  .summary { grid-template-columns: 1fr; gap: 16px; }
+  .h-row {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas: "ticker arrow" "price pct" "profit profit";
     gap: 10px;
-    align-items: center;
   }
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 11px;
-    border-radius: 20px;
-    font-size: 12px;
-    font-weight: 600;
-    background: #0A1E35;
-    border: 1px solid #2a4060;
-  }
-  .badge.open { color: #4ECDC4; border-color: #4ECDC4; }
-  .badge.closed { color: #a8b8c8; }
-  .badge.pre, .badge.post { color: #FFD93D; border-color: #FFD93D; }
-  .badge.dst { color: #F5A623; border-color: #F5A623; }
-  .badge .dot {
-    width: 6px; height: 6px; border-radius: 50%;
-    background: currentColor;
-    animation: pulse 2s infinite;
-  }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-  }
-
-  /* 大盤指標 */
-  .market-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-  .market-card {
-    background: #1a2e45;
-    border-radius: 12px;
-    padding: 14px 16px;
-  }
-  .market-card .label {
-    color: #a8b8c8;
-    font-size: 12px;
-    margin-bottom: 4px;
-  }
-  .market-card .price {
-    font-size: 18px;
-    font-weight: 700;
-    margin-bottom: 2px;
-  }
-  .market-card .pct {
-    font-size: 13px;
-    font-weight: 600;
-  }
-  .pct.up { color: #4ECDC4; }
-  .pct.down { color: #FF4757; }
-  .pct.neutral { color: #a8b8c8; }
-
-  /* 總損益 */
-  .summary {
-    background: linear-gradient(135deg, #1a2e45 0%, #243a55 100%);
-    border-radius: 12px;
-    padding: 18px 20px;
-    margin-bottom: 16px;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 12px;
-  }
-  .summary-item .label {
-    color: #a8b8c8;
-    font-size: 12px;
-    margin-bottom: 4px;
-  }
-  .summary-item .value {
-    font-size: 18px;
-    font-weight: 700;
-  }
-  .summary-item .value.big { font-size: 22px; }
-
-  /* 持股卡片 */
-  .holdings-title {
-    color: #F5A623;
-    font-size: 16px;
-    font-weight: 600;
-    margin: 16px 0 10px 0;
-  }
-  .holding-card {
-    background: #1a2e45;
-    border-radius: 12px;
-    padding: 16px 18px;
-    margin-bottom: 10px;
-    cursor: pointer;
-    transition: 0.2s;
-    border: 1px solid transparent;
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr 1fr 24px;
-    gap: 10px;
-    align-items: center;
-  }
-  .holding-card:hover {
-    border-color: #F5A623;
-    transform: translateX(2px);
-  }
-  .h-ticker {
-    font-size: 17px;
-    font-weight: 700;
-    color: #FFFFFF;
-  }
-  .h-shares {
-    color: #a8b8c8;
-    font-size: 12px;
-    margin-top: 2px;
-  }
-  .h-col-label {
-    color: #a8b8c8;
-    font-size: 11px;
-    margin-bottom: 2px;
-  }
-  .h-price {
-    font-size: 15px;
-    font-weight: 600;
-  }
-  .h-profit {
-    font-size: 14px;
-    font-weight: 700;
-  }
-  .h-arrow {
-    color: #F5A623;
-    font-size: 18px;
-    text-align: right;
-  }
-  .session-tag {
-    display: inline-block;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 10px;
-    margin-left: 6px;
-    background: #0A1E35;
-    color: #a8b8c8;
-    border: 1px solid #2a4060;
-  }
-  .session-tag.PRE { color: #FFD93D; border-color: #FFD93D; }
-  .session-tag.POST { color: #FFD93D; border-color: #FFD93D; }
-  .session-tag.REGULAR { color: #4ECDC4; border-color: #4ECDC4; }
-
-  /* 載入中 / 錯誤 */
-  .state-box {
-    background: #1a2e45;
-    border-radius: 12px;
-    padding: 40px 20px;
-    text-align: center;
-    color: #a8b8c8;
-  }
-  .state-box.error { color: #FF4757; }
-  .spinner {
-    display: inline-block;
-    width: 32px;
-    height: 32px;
-    border: 3px solid #2a4060;
-    border-top-color: #F5A623;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 12px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* userId 輸入彈窗 */
-  .modal-bg {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.85);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-    padding: 20px;
-  }
-  .modal-bg.show { display: flex; }
-  .modal {
-    background: #1a2e45;
-    border-radius: 12px;
-    padding: 24px;
-    max-width: 400px;
-    width: 100%;
-    border: 1px solid #F5A623;
-  }
-  .modal h2 {
-    color: #F5A623;
-    font-size: 18px;
-    margin-bottom: 8px;
-  }
-  .modal p {
-    color: #a8b8c8;
-    font-size: 13px;
-    margin-bottom: 16px;
-  }
-  .modal input {
-    width: 100%;
-    background: #0A1E35;
-    border: 1px solid #2a4060;
-    color: #FFFFFF;
-    padding: 10px 12px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-family: monospace;
-    margin-bottom: 12px;
-  }
-  .modal input:focus { outline: none; border-color: #F5A623; }
-  .modal button {
-    background: #F5A623;
-    color: #0A1E35;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-weight: 700;
-    cursor: pointer;
-    width: 100%;
-    font-size: 14px;
-  }
-
-  .footer {
-    text-align: center;
-    color: #5a6a80;
-    font-size: 11px;
-    margin-top: 24px;
-    padding: 16px;
-  }
-
-  /* RWD */
-  @media (max-width: 600px) {
-    .summary { grid-template-columns: 1fr 1fr; }
-    .summary-item:first-child { grid-column: 1 / -1; }
-    .holding-card {
-      grid-template-columns: 2fr 1fr 1fr;
-      grid-template-rows: auto auto;
-    }
-    .holding-card .h-col-shares-row { grid-column: 1 / -1; }
-    .h-arrow { display: none; }
-  }
+  .h-row > div:nth-child(1) { grid-area: ticker; }
+  .h-row > div:nth-child(2) { grid-area: price; }
+  .h-row > div:nth-child(3) { grid-area: pct; }
+  .h-row > div:nth-child(4) { grid-area: profit; }
+  .h-row > div:nth-child(5) { grid-area: arrow; text-align: right; }
+}
 </style>
 </head>
 <body>
-
 <div class="container">
 
-  <div class="header">
+  <div class="top-bar">
+    <span class="brand"><span class="nf">美股</span><span class="en">PORTFOLIO MATRIX</span></span>
+    <div class="clock" id="clock">--:--:-- TW</div>
+  </div>
+  <div class="divider"></div>
+
+  <!-- Status -->
+  <div class="status-bar">
     <div>
-      <h1>📊 我的持股總覽</h1>
-      <div class="subtitle" id="lastUpdate">載入中...</div>
+      <span class="label">USER</span>
+      <span class="val" id="userTag">—</span>
     </div>
-    <button class="refresh-btn" id="refreshBtn" onclick="loadDashboard()">🔄 重新整理</button>
+    <div>
+      <span class="label">SYNC</span>
+      <span class="val" id="lastSync">待命</span>
+    </div>
+    <button class="btn-refresh" id="refreshBtn" onclick="loadDashboard()">REFRESH</button>
   </div>
 
-  <!-- 市場狀態徽章 -->
-  <div class="market-bar" id="marketBar" style="display:none;"></div>
+  <!-- Market badges -->
+  <div class="market-strip" id="marketStrip"></div>
 
-  <!-- 大盤指標 -->
+  <!-- Market grid -->
+  <div class="section-h" id="mktTitle" style="display:none;">MARKET INDEX</div>
   <div class="market-grid" id="marketGrid"></div>
 
-  <!-- 總損益 -->
-  <div class="summary" id="summary" style="display:none;"></div>
+  <!-- Summary -->
+  <div class="section-h" id="sumTitle" style="display:none;">PORTFOLIO P&L</div>
+  <div id="summaryArea"></div>
 
-  <!-- 持股 -->
-  <div class="holdings-title" id="holdingsTitle" style="display:none;">💼 我的持股</div>
-  <div id="holdings"></div>
+  <!-- Holdings -->
+  <div class="section-h" id="holdTitle" style="display:none;">HOLDINGS</div>
+  <div id="holdingsArea"></div>
 
-  <!-- 狀態區 -->
-  <div id="stateBox" class="state-box">
+  <!-- State -->
+  <div class="state-box" id="stateBox">
     <div class="spinner"></div>
-    <div>載入持股資料中...</div>
+    <div class="msg">SYNCING DATA</div>
+    <div class="sub">載入持股矩陣...</div>
   </div>
 
-  <div class="footer">
-    美股神器 v6.0 · Powered by GAS + Claude
-  </div>
+  <div class="footer">SHENGI v6.1 · POWERED BY GAS + CLAUDE</div>
 
 </div>
 
-<!-- userId 輸入彈窗 -->
+<!-- Modal -->
 <div class="modal-bg" id="modal">
   <div class="modal">
-    <h2>👤 請輸入你的 LINE User ID</h2>
-    <p>第一次使用?從 LINE @368ceoiv 取得 userId 後貼進來。儲存後不用再輸入。</p>
+    <h2>USER ID<span class="zh">· 登入</span></h2>
+    <p>第一次使用?從 LINE @368ceoiv 取得 USER ID 後貼進來。儲存後不用再輸入。</p>
     <input id="userIdInput" placeholder="U657f8f31ab...">
-    <button onclick="saveUserId()">儲存並載入</button>
+    <button onclick="saveUserId()">CONFIRM 儲存並載入</button>
   </div>
 </div>
 
 <script>
-// ========== 設定 ==========
 const API_URL = 'https://script.google.com/macros/s/AKfycbzjaRxJhYkqNIaJaFxvSiy0L120H0m0k7NY_Vc6IXIw70kO2SIvf3fOf26TnhApTgrg/exec';
-const STOCK_PAGE = 'stock_12steps.html'; // 個股分析頁(同目錄)
+const STOCK_PAGE = 'stock_12steps.html';
 
-// ========== JSONP helper ==========
 function jsonp(url, params) {
   return new Promise((resolve, reject) => {
     const cb = 'jsonp_cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
-    const timeout = setTimeout(() => {
-      cleanup();
-      reject(new Error('請求逾時(30秒)'));
-    }, 30000);
-
+    const timeout = setTimeout(() => { cleanup(); reject(new Error('REQUEST_TIMEOUT')); }, 30000);
     function cleanup() {
       clearTimeout(timeout);
       delete window[cb];
       if (script.parentNode) script.parentNode.removeChild(script);
     }
-
-    window[cb] = (data) => {
-      cleanup();
-      resolve(data);
-    };
-
+    window[cb] = (data) => { cleanup(); resolve(data); };
     const qs = Object.entries({ ...params, callback: cb })
-      .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
-      .join('&');
-
+      .map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
     const script = document.createElement('script');
     script.src = `${url}?${qs}`;
-    script.onerror = () => {
-      cleanup();
-      reject(new Error('網路錯誤,API 連不上'));
-    };
+    script.onerror = () => { cleanup(); reject(new Error('NETWORK_ERROR')); };
     document.head.appendChild(script);
   });
 }
 
-// ========== userId 取得 ==========
+function $(id) { return document.getElementById(id); }
+function esc(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 function getUserId() {
   const url = new URL(window.location.href);
-  const fromUrl = url.searchParams.get('userId');
+  const fromUrl = url.searchParams.get('userId') || url.searchParams.get('id');
   if (fromUrl) {
     localStorage.setItem('userId', fromUrl);
     return fromUrl;
   }
   return localStorage.getItem('userId') || '';
 }
-
 function saveUserId() {
-  const v = document.getElementById('userIdInput').value.trim();
+  const v = $('userIdInput').value.trim();
   if (!v.startsWith('U') || v.length < 30) {
-    alert('userId 格式錯誤,應該是 U 開頭的長字串');
+    alert('USER ID 格式錯誤,應該是 U 開頭的長字串');
     return;
   }
   localStorage.setItem('userId', v);
-  document.getElementById('modal').classList.remove('show');
+  $('modal').classList.remove('show');
   loadDashboard();
 }
-
-// ========== 工具 ==========
 function fmtPrice(v) {
   if (v == null || isNaN(v)) return '—';
   return Number(v).toFixed(2);
 }
-
-function fmtMoney(v, currency = 'USD') {
+function fmtMoney(v) {
   if (v == null || isNaN(v)) return '—';
   const sign = v >= 0 ? '+' : '';
-  const fixed = Number(v).toFixed(2);
-  return currency === 'TWD' ? `${sign}NT$${Number(fixed).toLocaleString()}` : `${sign}$${Number(fixed).toLocaleString()}`;
+  return `${sign}$${Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 }
-
+function fmtMoneyTwd(v) {
+  if (v == null || isNaN(v)) return '—';
+  const sign = v >= 0 ? '+' : '';
+  return `${sign}NT$${Number(v).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+}
 function fmtPct(v) {
   if (v == null || isNaN(v)) return '—';
   const sign = v >= 0 ? '+' : '';
   return `${sign}${Number(v).toFixed(2)}%`;
 }
-
-function pctClass(v) {
-  if (v == null || isNaN(v) || v === 0) return 'neutral';
+function dirClass(v) {
+  if (v == null || isNaN(v) || v === 0) return 'flat';
   return v > 0 ? 'up' : 'down';
 }
 
-function escapeHtml(s) {
-  if (s == null) return '';
-  return String(s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+function updateClock() {
+  const d = new Date();
+  const t = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')} TW`;
+  $('clock').textContent = t;
 }
+setInterval(updateClock, 1000);
+updateClock();
 
-// ========== 渲染 ==========
-function renderMarketBar(data) {
-  const bar = document.getElementById('marketBar');
+function renderMarketStrip(data) {
   const items = [];
 
-  // 美股
   const usMap = {
-    'PRE': { cls: 'pre', txt: '🌅 美股盤前' },
-    'OPEN': { cls: 'open', txt: '🟢 美股交易中', dot: true },
-    'POST': { cls: 'post', txt: '🌆 美股盤後' },
-    'CLOSED': { cls: 'closed', txt: '⚫ 美股休市' },
-    'HOLIDAY': { cls: 'closed', txt: '🎉 美股假日' }
+    PRE:    { cls: 'warn', txt: 'US · PRE-MARKET' },
+    OPEN:   { cls: 'live', txt: 'US · LIVE', live: true },
+    POST:   { cls: 'warn', txt: 'US · AFTER-HOURS' },
+    CLOSED: { cls: '',     txt: 'US · CLOSED' },
+    HOLIDAY:{ cls: '',     txt: 'US · HOLIDAY' }
   };
-  const us = usMap[data.marketUS] || { cls: 'closed', txt: `美股 ${data.marketUS || '?'}` };
-  items.push(`<span class="badge ${us.cls}">${us.dot ? '<span class="dot"></span>' : ''}${us.txt}</span>`);
+  const us = usMap[data.marketUS] || { cls: '', txt: `US · ${data.marketUS || '?'}` };
+  items.push(`<span class="mkt-badge ${us.cls}">${us.live ? '<span class="dot"></span>' : ''}${us.txt}</span>`);
 
-  // 台股
   const twMap = {
-    'OPEN': { cls: 'open', txt: '🟢 台股交易中', dot: true },
-    'CLOSED': { cls: 'closed', txt: '⚫ 台股收盤' },
-    'HOLIDAY': { cls: 'closed', txt: '🎉 台股假日' }
+    OPEN:   { cls: 'live', txt: 'TW · LIVE', live: true },
+    CLOSED: { cls: '',     txt: 'TW · CLOSED' },
+    HOLIDAY:{ cls: '',     txt: 'TW · HOLIDAY' }
   };
-  const tw = twMap[data.marketTW] || { cls: 'closed', txt: `台股 ${data.marketTW || '?'}` };
-  items.push(`<span class="badge ${tw.cls}">${tw.dot ? '<span class="dot"></span>' : ''}${tw.txt}</span>`);
+  const tw = twMap[data.marketTW] || { cls: '', txt: `TW · ${data.marketTW || '?'}` };
+  items.push(`<span class="mkt-badge ${tw.cls}">${tw.live ? '<span class="dot"></span>' : ''}${tw.txt}</span>`);
 
-  // 夏令
-  if (data.isDST) {
-    items.push(`<span class="badge dst">☀️ 夏令時間</span>`);
-  }
+  if (data.isDST) items.push(`<span class="mkt-badge dst">DAYLIGHT SAVING</span>`);
+  if (data.fx) items.push(`<span class="mkt-badge fx">USD/TWD ${Number(data.fx).toFixed(2)}</span>`);
 
-  // 匯率
-  if (data.fx) {
-    items.push(`<span class="badge">💱 USD/TWD ${Number(data.fx).toFixed(2)}</span>`);
-  }
-
-  bar.innerHTML = items.join('');
-  bar.style.display = 'flex';
+  $('marketStrip').innerHTML = items.join('');
 }
 
 function renderMarket(data) {
-  const grid = document.getElementById('marketGrid');
   const m = data.market || {};
   const cards = [
     { k: 'sp500', label: 'S&P 500' },
-    { k: 'nasdaq', label: 'Nasdaq' },
-    { k: 'vix', label: 'VIX 恐慌指數' }
+    { k: 'nasdaq', label: 'NASDAQ' },
+    { k: 'vix', label: 'VIX FEAR' }
   ];
-  grid.innerHTML = cards.map(c => {
+  const html = cards.map(c => {
     const d = m[c.k];
     if (!d) {
-      return `<div class="market-card">
-        <div class="label">${c.label}</div>
-        <div class="price">—</div>
-        <div class="pct neutral">資料未取得</div>
+      return `<div class="mkt-card flat">
+        <div class="mck">${c.label}</div>
+        <div class="mcp">—</div>
+        <div class="mcd flat">N/A</div>
       </div>`;
     }
-    return `<div class="market-card">
-      <div class="label">${c.label}</div>
-      <div class="price">${fmtPrice(d.price)}</div>
-      <div class="pct ${pctClass(d.pct)}">${fmtPct(d.pct)}</div>
+    const cls = dirClass(d.pct);
+    return `<div class="mkt-card ${cls}">
+      <div class="mck">${c.label}</div>
+      <div class="mcp">${fmtPrice(d.price)}</div>
+      <div class="mcd ${cls}">${fmtPct(d.pct)}</div>
     </div>`;
   }).join('');
+  $('marketGrid').innerHTML = html;
+  $('mktTitle').style.display = 'flex';
 }
 
 function renderSummary(data) {
   const holdings = data.holdings || [];
   if (holdings.length === 0) {
-    document.getElementById('summary').style.display = 'none';
+    $('summaryArea').innerHTML = '';
+    $('sumTitle').style.display = 'none';
     return;
   }
 
-  // 總成本 / 總市值 / 總損益(USD)
   let totalCost = 0, totalValue = 0;
   holdings.forEach(h => {
-    const cost = (h.avgPrice || 0) * (h.shares || 0);
-    const value = (h.currentPrice || 0) * (h.shares || 0);
-    totalCost += cost;
-    totalValue += value;
+    totalCost += (h.avgPrice || 0) * (h.shares || 0);
+    totalValue += (h.currentPrice || 0) * (h.shares || 0);
   });
   const profitUSD = totalValue - totalCost;
   const profitPct = totalCost > 0 ? (profitUSD / totalCost * 100) : 0;
   const fx = data.fx || 0;
   const profitTWD = fx > 0 ? profitUSD * fx : 0;
+  const cls = dirClass(profitUSD);
 
-  const cls = pctClass(profitUSD);
-  const sum = document.getElementById('summary');
-  sum.innerHTML = `
-    <div class="summary-item">
-      <div class="label">總損益(USD)</div>
-      <div class="value big ${cls}">${fmtMoney(profitUSD)} (${fmtPct(profitPct)})</div>
+  $('summaryArea').innerHTML = `<div class="summary">
+    <div>
+      <div class="sk">TOTAL P&L · USD</div>
+      <div class="sv big ${cls}">${fmtMoney(profitUSD)}</div>
+      <div class="sub-meta">${fmtPct(profitPct)}</div>
     </div>
-    <div class="summary-item">
-      <div class="label">總市值</div>
-      <div class="value">$${totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+    <div>
+      <div class="sk">MARKET VALUE</div>
+      <div class="sv flat">$${totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+      <div class="sub-meta">COST $${totalCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
     </div>
-    <div class="summary-item">
-      <div class="label">${fx > 0 ? '損益(TWD)' : '總成本'}</div>
-      <div class="value ${fx > 0 ? cls : ''}">${fx > 0 ? fmtMoney(profitTWD, 'TWD') : '$' + totalCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+    <div>
+      <div class="sk">P&L · TWD</div>
+      <div class="sv ${cls}">${fx > 0 ? fmtMoneyTwd(profitTWD) : '—'}</div>
+      <div class="sub-meta">${fx > 0 ? 'FX ' + fx.toFixed(2) : 'NO FX RATE'}</div>
     </div>
-  `;
-  sum.style.display = 'grid';
+  </div>`;
+  $('sumTitle').style.display = 'flex';
 }
 
 function renderHoldings(data) {
   const holdings = data.holdings || [];
-  const titleEl = document.getElementById('holdingsTitle');
-  const list = document.getElementById('holdings');
+  const userId = getUserId();
 
   if (holdings.length === 0) {
-    list.innerHTML = `<div class="state-box">尚未上傳持股 — 請到 LINE @368ceoiv 上傳券商截圖</div>`;
-    titleEl.style.display = 'none';
+    $('holdingsArea').innerHTML = `<div class="state-box">
+      <div class="msg">NO HOLDINGS</div>
+      <div class="sub">尚未上傳持股 — 請到 LINE @368ceoiv 上傳券商截圖</div>
+    </div>`;
+    $('holdTitle').style.display = 'flex';
     return;
   }
 
-  titleEl.style.display = 'block';
-  list.innerHTML = holdings.map(h => {
-    const profitCls = pctClass(h.profitUSD);
+  $('holdTitle').style.display = 'flex';
+  $('holdingsArea').innerHTML = holdings.map(h => {
+    const cls = dirClass(h.profitUSD);
+    const pctCls = dirClass(h.pct);
     const sessionTag = h.session ? `<span class="session-tag ${h.session}">${h.session}</span>` : '';
-    const userId = getUserId();
     const link = `${STOCK_PAGE}?symbol=${encodeURIComponent(h.ticker)}&userId=${encodeURIComponent(userId)}`;
-    return `<div class="holding-card" onclick="window.open('${link}', '_blank')">
+    return `<div class="h-row ${cls}" onclick="window.open('${link}', '_blank')">
       <div>
-        <div class="h-ticker">${escapeHtml(h.ticker)}${sessionTag}</div>
-        <div class="h-shares">${(h.shares || 0).toLocaleString()} 股 @ $${fmtPrice(h.avgPrice)}</div>
+        <div class="h-ticker">${esc(h.ticker)}${sessionTag}</div>
+        <div class="h-shares">${(h.shares || 0).toLocaleString()} SHARES @ $${fmtPrice(h.avgPrice)}</div>
       </div>
       <div>
-        <div class="h-col-label">現價</div>
+        <div class="h-col-k">CURRENT</div>
         <div class="h-price">$${fmtPrice(h.currentPrice)}</div>
       </div>
       <div>
-        <div class="h-col-label">漲跌</div>
-        <div class="h-price pct ${pctClass(h.pct)}">${fmtPct(h.pct)}</div>
+        <div class="h-col-k">CHANGE</div>
+        <div class="h-pct ${pctCls}">${fmtPct(h.pct)}</div>
       </div>
       <div>
-        <div class="h-col-label">損益</div>
-        <div class="h-profit ${profitCls}">${fmtMoney(h.profitUSD)}</div>
-        <div class="h-col-label" style="margin-top:2px;">${fmtPct(h.profitPct)}</div>
+        <div class="h-col-k">P&L · USD</div>
+        <div class="h-profit-main ${cls}">${fmtMoney(h.profitUSD)}</div>
+        <div class="h-profit-sub ${cls}">${fmtPct(h.profitPct)}</div>
       </div>
-      <div class="h-arrow">›</div>
+      <div class="h-arrow">▶</div>
     </div>`;
   }).join('');
 }
 
-function renderUpdate(data) {
-  const el = document.getElementById('lastUpdate');
+function renderSyncTime(data) {
   const ts = data.timestamp ? new Date(data.timestamp) : new Date();
-  el.textContent = `最後更新: ${ts.toLocaleString('zh-TW', { hour12: false })}`;
+  $('lastSync').textContent = ts.toLocaleTimeString('zh-TW', { hour12: false });
 }
 
-// ========== 主流程 ==========
 async function loadDashboard() {
   const userId = getUserId();
   if (!userId) {
-    document.getElementById('modal').classList.add('show');
-    document.getElementById('stateBox').innerHTML = '請輸入 userId 開始使用';
+    $('modal').classList.add('show');
+    setReady('輸入 USER ID 開始使用');
     return;
   }
 
-  const btn = document.getElementById('refreshBtn');
-  const stateBox = document.getElementById('stateBox');
+  $('userTag').textContent = userId.substring(0, 10) + '...';
+  const btn = $('refreshBtn');
   btn.disabled = true;
-  btn.textContent = '⏳ 載入中...';
-  stateBox.className = 'state-box';
-  stateBox.innerHTML = '<div class="spinner"></div><div>載入持股資料中...</div>';
-  stateBox.style.display = 'block';
+  btn.textContent = '⋯ SYNC';
+
+  setLoading('SYNCING DATA');
+  $('marketStrip').innerHTML = '';
+  $('marketGrid').innerHTML = '';
+  $('summaryArea').innerHTML = '';
+  $('holdingsArea').innerHTML = '';
+  $('mktTitle').style.display = 'none';
+  $('sumTitle').style.display = 'none';
+  $('holdTitle').style.display = 'none';
 
   try {
     const data = await jsonp(API_URL, { action: 'dashboard', userId });
-
     if (!data || data.ok !== true) {
-      throw new Error(data && data.error ? data.error : '回傳格式錯誤(沒拿到 ok:true)');
+      throw new Error(data && data.error ? data.error : 'API_RETURN_ERROR');
     }
 
-    renderMarketBar(data);
+    renderMarketStrip(data);
     renderMarket(data);
     renderSummary(data);
     renderHoldings(data);
-    renderUpdate(data);
-    stateBox.style.display = 'none';
-
+    renderSyncTime(data);
+    $('stateBox').style.display = 'none';
   } catch (err) {
-    console.error('[dashboard] 載入失敗', err);
-    stateBox.className = 'state-box error';
-    stateBox.innerHTML = `❌ 載入失敗: ${escapeHtml(err.message || String(err))}<br><br>
-      <button class="refresh-btn" onclick="loadDashboard()">重試</button>
-      <button class="refresh-btn" style="margin-left:8px;" onclick="changeUserId()">換 userId</button>`;
+    setError(esc(err.message || String(err)));
   } finally {
     btn.disabled = false;
-    btn.textContent = '🔄 重新整理';
+    btn.textContent = 'REFRESH';
   }
 }
 
-function changeUserId() {
-  const cur = getUserId();
-  document.getElementById('userIdInput').value = cur;
-  document.getElementById('modal').classList.add('show');
+function setReady(sub) {
+  const sb = $('stateBox');
+  sb.className = 'state-box';
+  sb.style.display = 'block';
+  sb.innerHTML = `<div class="msg">SYSTEM READY</div><div class="sub">${esc(sub)}</div>`;
+}
+function setLoading(msg) {
+  const sb = $('stateBox');
+  sb.className = 'state-box';
+  sb.style.display = 'block';
+  sb.innerHTML = `<div class="spinner"></div><div class="msg">${esc(msg)}</div><div class="sub">載入持股矩陣...</div>`;
+}
+function setError(msg) {
+  const sb = $('stateBox');
+  sb.className = 'state-box error';
+  sb.style.display = 'block';
+  sb.innerHTML = `<div class="msg">! ERROR</div><div class="sub">${msg}</div>
+    <button class="btn-retry" onclick="loadDashboard()">RETRY</button>
+    <button class="btn-change" onclick="changeUserId()">CHANGE USER</button>`;
 }
 
-// 啟動
+function changeUserId() {
+  $('userIdInput').value = getUserId();
+  $('modal').classList.add('show');
+}
+
 loadDashboard();
 </script>
-
 </body>
 </html>
