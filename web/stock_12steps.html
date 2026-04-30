@@ -663,17 +663,19 @@ body {
     <div class="sub">輸入代號或選 QUICK 開始 5 式分析</div>
   </div>
 
-  <div class="footer">SHENGI v6.1 · POWERED BY GAS + CLAUDE</div>
+  <div class="footer">SHENGI v6.2 · POWERED BY GAS + CLAUDE</div>
 
 </div>
 
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbzjaRxJhYkqNIaJaFxvSiy0L120H0m0k7NY_Vc6IXIw70kO2SIvf3fOf26TnhApTgrg/exec';
 
-const ALLOWED_SYMBOLS = ['ORCX', 'SMUP', 'SPY', 'QQQ', 'VIX', 'NVDA', 'TSLA', 'AAPL'];
-const QUICK_LIST = [
-  { sym: 'ORCX', label: 'ORCX 333股' },
-  { sym: 'SMUP', label: 'SMUP 1072股' },
+// 大盤指標白名單(永遠允許)
+const MARKET_SYMBOLS = ['SPY', 'QQQ', 'VIX', 'DIA', 'IWM'];
+
+// v6.2:改為動態載入,進頁面時打 dashboard API 拿用戶持股
+let ALLOWED_SYMBOLS = [...MARKET_SYMBOLS]; // 預設先放大盤
+let QUICK_LIST = [
   { sym: 'SPY',  label: 'SPY 大盤' },
   { sym: 'QQQ',  label: 'QQQ 科技' },
   { sym: 'VIX',  label: 'VIX 恐慌' }
@@ -780,7 +782,7 @@ async function runAnalysis() {
     return;
   }
   if (!ALLOWED_SYMBOLS.includes(sym)) {
-    setError(`SYMBOL ${esc(sym)} 不在白名單<br>目前可查:${ALLOWED_SYMBOLS.join(' / ')}<br><br>新增持股請從 LINE @368ceoiv 上傳券商截圖`);
+    setError(`SYMBOL ${esc(sym)} 不在白名單<br><br>目前可查:<br>${ALLOWED_SYMBOLS.join(' / ')}<br><br>新增持股請從 LINE @368ceoiv 上傳券商截圖,系統會自動加入白名單。`);
     return;
   }
 
@@ -1052,12 +1054,43 @@ function toggleSub(id) {
   }
 }
 
+// v6.2 新增:打 dashboard API 拿用戶持股,動態組 Quick 跟白名單
+async function loadUserHoldings(userId) {
+  try {
+    const data = await jsonp(API_URL, { action: 'dashboard', userId });
+    if (data && data.ok === true && Array.isArray(data.holdings)) {
+      const myStocks = data.holdings.filter(h => h.ticker).map(h => ({
+        sym: h.ticker,
+        label: `${h.ticker} ${(h.shares || 0).toLocaleString()}股`
+      }));
+      // Quick:用戶持股放前面 + 大盤指標
+      QUICK_LIST = [
+        ...myStocks,
+        { sym: 'SPY',  label: 'SPY 大盤' },
+        { sym: 'QQQ',  label: 'QQQ 科技' },
+        { sym: 'VIX',  label: 'VIX 恐慌' }
+      ];
+      // 白名單:用戶持股 + 大盤
+      ALLOWED_SYMBOLS = [
+        ...myStocks.map(s => s.sym),
+        ...MARKET_SYMBOLS
+      ];
+      renderQuickTags(); // 重畫
+    }
+  } catch (e) {
+    // 拿不到沒關係,Quick 會用預設大盤指標
+    console.warn('[12steps] 無法載入持股,Quick 使用預設大盤', e);
+  }
+}
+
 function init() {
   renderQuickTags();
   const userId = getUserId();
   if (userId) {
     $('userTag').textContent = userId.substring(0, 10) + '...';
     localStorage.setItem('userId', userId);
+    // v6.2:背景載入用戶持股,不擋主流程
+    loadUserHoldings(userId);
   } else {
     $('userTag').textContent = '未登入';
     $('userTag').className = 'val err';
