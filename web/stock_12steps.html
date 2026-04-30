@@ -663,22 +663,20 @@ body {
     <div class="sub">輸入代號或選 QUICK 開始 5 式分析</div>
   </div>
 
-  <div class="footer">SHENGI v6.2 · POWERED BY GAS + CLAUDE</div>
+  <div class="footer">SHENGI v6.3 · POWERED BY GAS + CLAUDE</div>
 
 </div>
 
 <script>
 const API_URL = 'https://script.google.com/macros/s/AKfycbzjaRxJhYkqNIaJaFxvSiy0L120H0m0k7NY_Vc6IXIw70kO2SIvf3fOf26TnhApTgrg/exec';
 
-// 大盤指標白名單(永遠允許)
-const MARKET_SYMBOLS = ['SPY', 'QQQ', 'VIX', 'DIA', 'IWM'];
+// 純指標白名單(不是 ETF,純看不能買,Quick 永遠允許)
+const MARKET_SYMBOLS = ['VIX'];
 
-// v6.2:改為動態載入,進頁面時打 dashboard API 拿用戶持股
-let ALLOWED_SYMBOLS = [...MARKET_SYMBOLS]; // 預設先放大盤
+// v6.3:Quick 預設只放純指標,有持股的用戶會動態 prepend 自己持股
+let ALLOWED_SYMBOLS = [...MARKET_SYMBOLS];
 let QUICK_LIST = [
-  { sym: 'SPY',  label: 'SPY 大盤' },
-  { sym: 'QQQ',  label: 'QQQ 科技' },
-  { sym: 'VIX',  label: 'VIX 恐慌' }
+  { sym: 'VIX', label: 'VIX 恐慌指數' }
 ];
 
 const FORMULA = {
@@ -1054,7 +1052,7 @@ function toggleSub(id) {
   }
 }
 
-// v6.2 新增:打 dashboard API 拿用戶持股,動態組 Quick 跟白名單
+// v6.2 新增 / v6.3 修正:打 dashboard API 拿用戶持股,動態組 Quick 跟白名單
 async function loadUserHoldings(userId) {
   try {
     const data = await jsonp(API_URL, { action: 'dashboard', userId });
@@ -1063,14 +1061,12 @@ async function loadUserHoldings(userId) {
         sym: h.ticker,
         label: `${h.ticker} ${(h.shares || 0).toLocaleString()}股`
       }));
-      // Quick:用戶持股放前面 + 大盤指標
+      // Quick:用戶持股放前面 + VIX 純指標
       QUICK_LIST = [
         ...myStocks,
-        { sym: 'SPY',  label: 'SPY 大盤' },
-        { sym: 'QQQ',  label: 'QQQ 科技' },
-        { sym: 'VIX',  label: 'VIX 恐慌' }
+        { sym: 'VIX', label: 'VIX 恐慌指數' }
       ];
-      // 白名單:用戶持股 + 大盤
+      // 白名單:用戶持股 + VIX
       ALLOWED_SYMBOLS = [
         ...myStocks.map(s => s.sym),
         ...MARKET_SYMBOLS
@@ -1078,8 +1074,7 @@ async function loadUserHoldings(userId) {
       renderQuickTags(); // 重畫
     }
   } catch (e) {
-    // 拿不到沒關係,Quick 會用預設大盤指標
-    console.warn('[12steps] 無法載入持股,Quick 使用預設大盤', e);
+    console.warn('[12steps] 無法載入持股,Quick 使用預設指標', e);
   }
 }
 
