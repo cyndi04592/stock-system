@@ -3,873 +3,714 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>美股神器 5 式投票分析</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<title>美股神器 — 個股 5 式分析</title>
 <style>
-:root {
-  --bg:#020A14;--card:#071525;--card2:#0A1E35;
-  --gold:#F5A623;--cyan:#00D4FF;--green:#00FF88;
-  --red:#FF3366;--orange:#FF6B35;--purple:#A855F7;
-  --teal:#00CDB7;
-  --white:#E8F4FD;--gray:#4A6580;--lgray:#8BA8C4;
-  --border:rgba(0,212,255,0.12);
-}
-*{margin:0;padding:0;box-sizing:border-box;}
-body{background:var(--bg);color:var(--white);font-family:'Noto Sans TC',sans-serif;min-height:100vh;}
-.page{max-width:1140px;margin:0 auto;padding:20px;}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
+    background: #0A1E35;
+    color: #FFFFFF;
+    min-height: 100vh;
+    padding: 16px;
+  }
+  .container { max-width: 960px; margin: 0 auto; }
 
-/* ───── 頂欄 ───── */
-.top-bar{display:flex;align-items:center;justify-content:space-between;padding:16px 0 20px;border-bottom:1px solid var(--border);margin-bottom:24px;}
-.logo{font-family:'Orbitron',sans-serif;font-size:17px;font-weight:900;color:var(--gold);letter-spacing:2px;}
-.logo span{color:var(--cyan);}
-.clock{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--gray);}
+  /* 頂部 */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .back-btn {
+    background: #1a2e45;
+    color: #F5A623;
+    border: 1px solid #2a4060;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .back-btn:hover { border-color: #F5A623; }
+  .refresh-btn {
+    background: #1a2e45;
+    color: #F5A623;
+    border: 1px solid #F5A623;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* ───── 輸入區 ───── */
-.input-section{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px 24px;margin-bottom:20px;}
-.input-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;}
-.input-group{display:flex;flex-direction:column;gap:6px;}
-.input-label{font-size:10px;color:var(--gray);font-family:'JetBrains Mono',monospace;letter-spacing:1px;text-transform:uppercase;}
-.stock-input{background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;width:155px;letter-spacing:2px;transition:border-color 0.2s;}
-.stock-input:focus{outline:none;border-color:var(--cyan);}
-.market-select{background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:12px;cursor:pointer;}
-.market-select:focus{outline:none;border-color:var(--cyan);}
-.analyze-btn{padding:10px 24px;background:var(--cyan);border:none;border-radius:8px;color:#020A14;font-weight:900;font-size:13px;cursor:pointer;transition:all 0.2s;font-family:'Orbitron',sans-serif;letter-spacing:1px;white-space:nowrap;}
-.analyze-btn:hover{opacity:0.85;transform:translateY(-1px);}
-.analyze-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+  h1 {
+    color: #F5A623;
+    font-size: 22px;
+    font-weight: 700;
+  }
+  .subtitle {
+    color: #a8b8c8;
+    font-size: 13px;
+    margin-top: 2px;
+  }
 
-.quick-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px;align-items:center;}
-.quick-label{font-size:10px;color:var(--gray);font-family:'JetBrains Mono',monospace;letter-spacing:1px;}
-.quick-tag{padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--lgray);font-size:10px;cursor:pointer;transition:all 0.2s;font-family:'JetBrains Mono',monospace;}
-.quick-tag:hover{color:var(--white);border-color:rgba(255,255,255,0.25);}
-.quick-tag.holding{border-color:rgba(245,166,35,0.35);color:#C8A060;}
-.quick-tag.holding:hover{color:var(--gold);border-color:var(--gold);}
-.quick-tag.market{border-color:rgba(0,212,255,0.25);color:#60A8C8;}
-.quick-tag.market:hover{color:var(--cyan);border-color:var(--cyan);}
+  /* 大跌警報 */
+  .alert-banner {
+    background: linear-gradient(90deg, #FF4757, #c0392b);
+    color: #FFFFFF;
+    padding: 12px 18px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    font-weight: 700;
+    font-size: 14px;
+    text-align: center;
+    box-shadow: 0 4px 16px rgba(255, 71, 87, 0.3);
+  }
 
-/* ───── User 狀態列 ───── */
-.user-bar{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:8px 14px;border-radius:8px;
-  background:rgba(0,0,0,0.3);border:1px solid var(--border);
-  margin-bottom:20px;font-size:11px;font-family:'JetBrains Mono',monospace;
-}
-.user-bar .lbl{color:var(--gray);}
-.user-bar .val{color:var(--cyan);}
+  /* 結論卡片 */
+  .conclusion-card {
+    background: linear-gradient(135deg, #1a2e45 0%, #243a55 100%);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 16px;
+    border: 2px solid;
+    text-align: center;
+  }
+  .conclusion-card.bullish { border-color: #4ECDC4; }
+  .conclusion-card.bearish { border-color: #FF4757; }
+  .conclusion-card.neutral { border-color: #FFD93D; }
+  .conclusion-card.insufficient { border-color: #5a6a80; }
 
-/* ───── Loading ───── */
-.loading{text-align:center;padding:48px;display:none;}
-.loading.show{display:block;}
-.loading-text{font-family:'Orbitron',sans-serif;font-size:12px;color:var(--cyan);letter-spacing:2px;animation:blink 1s infinite;}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+  .conclusion-emoji {
+    font-size: 48px;
+    margin-bottom: 8px;
+    line-height: 1;
+  }
+  .conclusion-label {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .conclusion-label.bullish { color: #4ECDC4; }
+  .conclusion-label.bearish { color: #FF4757; }
+  .conclusion-label.neutral { color: #FFD93D; }
+  .conclusion-label.insufficient { color: #a8b8c8; }
 
-/* ───── Error ───── */
-.error-box{
-  display:none;padding:20px;border-radius:12px;
-  background:rgba(255,51,102,0.08);border:1px solid rgba(255,51,102,0.3);
-  color:#C85070;font-size:13px;line-height:1.6;
-}
-.error-box.show{display:block;}
-.error-box strong{display:block;margin-bottom:6px;font-family:'Orbitron',sans-serif;color:var(--red);font-size:11px;letter-spacing:2px;}
+  .conclusion-suggestion {
+    font-size: 16px;
+    color: #FFFFFF;
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+  .conclusion-stats {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    color: #a8b8c8;
+    font-size: 13px;
+    flex-wrap: wrap;
+  }
+  .conclusion-stats strong { color: #F5A623; }
 
-/* ───── 大跌警報橫條 ───── */
-.alert-strip{
-  display:none;padding:14px 18px;border-radius:10px;margin-bottom:18px;
-  background:linear-gradient(90deg, rgba(255,107,53,0.18), rgba(255,51,102,0.12));
-  border:1px solid rgba(255,107,53,0.5);
-  font-family:'Orbitron',sans-serif;font-size:12px;letter-spacing:2px;
-  color:var(--orange);
-  display:flex;align-items:center;gap:12px;
-  animation:pulse 1.5s infinite;
-}
-.alert-strip.show{display:flex;}
-.alert-strip .alert-icon{font-size:18px;}
-.alert-strip .alert-text{flex:1;font-weight:700;}
-.alert-strip .alert-tag{
-  font-size:10px;color:var(--red);
-  background:rgba(255,51,102,0.15);
-  padding:3px 9px;border-radius:5px;border:1px solid rgba(255,51,102,0.3);
-}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,107,53,0.3)}50%{box-shadow:0 0 0 6px rgba(255,107,53,0)}}
+  /* 資訊區塊(持有期 / 槓桿耗損)*/
+  .info-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .info-card {
+    background: #1a2e45;
+    border-radius: 12px;
+    padding: 16px;
+    border-left: 4px solid;
+  }
+  .info-card .info-label {
+    color: #a8b8c8;
+    font-size: 12px;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .info-card .info-main {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .info-card .info-sub {
+    color: #a8b8c8;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .lock-icon {
+    font-size: 11px;
+    margin-left: 4px;
+    color: #F5A623;
+  }
+  .unclassified-warning {
+    background: #2a2410;
+    border: 1px solid #FFD93D;
+    color: #FFD93D;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    margin-top: 6px;
+    display: inline-block;
+  }
 
-/* ───── 結論區 ───── */
-.section-title{font-family:'Orbitron',sans-serif;font-size:11px;color:var(--gold);letter-spacing:3px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
-.section-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent);}
+  /* 5 式投票 */
+  .votes-title {
+    color: #F5A623;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 20px 0 10px 0;
+  }
+  .vote-card {
+    background: #1a2e45;
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 10px;
+    border-left: 4px solid #2a4060;
+    transition: 0.2s;
+  }
+  .vote-card.bullish { border-left-color: #4ECDC4; }
+  .vote-card.bearish { border-left-color: #FF4757; }
+  .vote-card.neutral { border-left-color: #FFD93D; }
+  .vote-card.abstain { border-left-color: #5a6a80; opacity: 0.7; }
 
-.verdict-panel{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px 24px;margin-bottom:20px;}
-.verdict-layout{display:flex;gap:24px;align-items:center;flex-wrap:wrap;}
-.verdict-circle{width:90px;height:90px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;border:3px solid var(--border);flex-shrink:0;transition:border-color 0.5s;}
-.verdict-num{font-family:'Orbitron',sans-serif;font-size:24px;font-weight:900;line-height:1;}
-.verdict-den{font-size:9px;color:var(--gray);font-family:'JetBrains Mono',monospace;margin-top:3px;letter-spacing:1px;}
-.verdict-info{flex:1;min-width:200px;}
-.verdict-label{font-size:14px;font-weight:700;margin-bottom:8px;}
-.verdict-bar-outer{display:flex;height:8px;border-radius:4px;overflow:hidden;background:rgba(255,255,255,0.05);margin-bottom:8px;}
-.vb-bull{background:var(--green);transition:width 0.8s ease;}
-.vb-neutral{background:var(--gray);transition:width 0.8s ease;}
-.vb-bear{background:var(--red);transition:width 0.8s ease;}
-.verdict-detail{font-size:10px;color:var(--gray);font-family:'JetBrains Mono',monospace;}
+  .vote-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    cursor: pointer;
+  }
+  .vote-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #FFFFFF;
+  }
+  .vote-name .formula-num {
+    color: #F5A623;
+    margin-right: 6px;
+  }
+  .vote-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .vote-badge.bullish { background: rgba(78, 205, 196, 0.15); color: #4ECDC4; }
+  .vote-badge.bearish { background: rgba(255, 71, 87, 0.15); color: #FF4757; }
+  .vote-badge.neutral { background: rgba(255, 217, 61, 0.15); color: #FFD93D; }
+  .vote-badge.abstain { background: rgba(90, 106, 128, 0.2); color: #a8b8c8; }
 
-.action-box{margin-top:16px;padding:14px 18px;border-radius:10px;font-size:12px;line-height:1.8;border-left:3px solid;}
-.ab-buy{background:rgba(0,255,136,0.06);border-color:var(--green);color:#60C890;}
-.ab-watch{background:rgba(0,212,255,0.06);border-color:var(--cyan);color:#60A8C8;}
-.ab-caution{background:rgba(255,107,53,0.06);border-color:var(--orange);color:#C87040;}
-.ab-danger{background:rgba(255,51,102,0.06);border-color:var(--red);color:#C85070;}
-.ab-title{font-weight:700;margin-bottom:4px;font-family:'JetBrains Mono',monospace;letter-spacing:1px;font-size:10px;}
+  .vote-conf {
+    color: #a8b8c8;
+    font-size: 11px;
+    margin-left: 6px;
+  }
+  .vote-note {
+    color: #a8b8c8;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-top: 6px;
+  }
+  .vote-toggle {
+    color: #F5A623;
+    font-size: 12px;
+    cursor: pointer;
+    margin-top: 8px;
+    user-select: none;
+  }
+  .vote-toggle:hover { text-decoration: underline; }
 
-/* 大字白話建議 */
-.action-big{
-  font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;
-  letter-spacing:3px;margin:8px 0 6px;
-}
+  /* CANDY 子式 */
+  .sub-list {
+    display: none;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed #2a4060;
+  }
+  .sub-list.show { display: block; }
+  .sub-item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 12px;
+    color: #a8b8c8;
+    border-bottom: 1px dotted #2a4060;
+  }
+  .sub-item:last-child { border-bottom: none; }
+  .sub-item .sub-name { color: #FFFFFF; }
+  .sub-item .sub-val { font-weight: 600; }
+  .sub-item .sub-val.bullish { color: #4ECDC4; }
+  .sub-item .sub-val.bearish { color: #FF4757; }
+  .sub-item .sub-val.neutral { color: #FFD93D; }
+  .sub-item .sub-val.abstain { color: #5a6a80; }
 
-/* ───── 5 式投票卡 ───── */
-.votes-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:24px;}
-@media(max-width:780px){.votes-grid{grid-template-columns:1fr;}}
+  /* 原始資料表 */
+  .raw-block {
+    background: #0A1E35;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-top: 8px;
+    font-family: monospace;
+    font-size: 11px;
+    color: #a8b8c8;
+    word-break: break-all;
+    line-height: 1.6;
+  }
 
-.vote-card{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:14px;padding:16px 18px;
-  position:relative;animation:fadeUp 0.35s ease both;
-  transition:transform 0.2s,border-color 0.2s;
-  cursor:pointer;
-}
-.vote-card:hover{transform:translateY(-2px);}
-.vote-card.v-bullish{border-color:rgba(0,255,136,0.4);background:rgba(0,255,136,0.04);}
-.vote-card.v-bearish{border-color:rgba(255,51,102,0.4);background:rgba(255,51,102,0.04);}
-.vote-card.v-neutral{border-color:rgba(0,212,255,0.3);background:rgba(0,212,255,0.03);}
-.vote-card.v-abstain{border-color:rgba(74,101,128,0.3);opacity:0.65;}
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  /* jiansrc 理由 */
+  .reason-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .reason-tag {
+    padding: 3px 9px;
+    border-radius: 12px;
+    font-size: 11px;
+    background: #0A1E35;
+    border: 1px solid #2a4060;
+  }
+  .reason-tag.bull { color: #4ECDC4; border-color: #4ECDC4; }
+  .reason-tag.bear { color: #FF4757; border-color: #FF4757; }
 
-.vote-header{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
-.vote-num{
-  width:34px;height:34px;border-radius:8px;
-  display:flex;align-items:center;justify-content:center;
-  font-family:'Orbitron',sans-serif;font-size:11px;font-weight:900;
-  flex-shrink:0;border:1px solid var(--border);background:var(--card2);color:var(--gray);
-}
-.vote-card.v-bullish .vote-num{background:rgba(0,255,136,0.15);color:var(--green);border-color:rgba(0,255,136,0.3);}
-.vote-card.v-bearish .vote-num{background:rgba(255,51,102,0.15);color:var(--red);border-color:rgba(255,51,102,0.3);}
-.vote-card.v-neutral .vote-num{background:rgba(0,212,255,0.12);color:var(--cyan);border-color:rgba(0,212,255,0.25);}
+  /* 載入中 / 錯誤 */
+  .state-box {
+    background: #1a2e45;
+    border-radius: 12px;
+    padding: 40px 20px;
+    text-align: center;
+    color: #a8b8c8;
+  }
+  .state-box.error { color: #FF4757; }
+  .spinner {
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    border: 3px solid #2a4060;
+    border-top-color: #F5A623;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-.vote-title{font-size:13px;font-weight:700;color:var(--white);line-height:1.3;}
-.vote-source{font-size:10px;color:var(--gray);font-family:'JetBrains Mono',monospace;margin-top:2px;}
+  .footer {
+    text-align: center;
+    color: #5a6a80;
+    font-size: 11px;
+    margin-top: 24px;
+    padding: 16px;
+  }
 
-.vote-status{
-  position:absolute;top:14px;right:16px;
-  font-size:10px;font-weight:900;
-  font-family:'Orbitron',sans-serif;letter-spacing:1.5px;
-  padding:3px 10px;border-radius:5px;
-}
-.vote-card.v-bullish .vote-status{background:rgba(0,255,136,0.15);color:var(--green);}
-.vote-card.v-bearish .vote-status{background:rgba(255,51,102,0.15);color:var(--red);}
-.vote-card.v-neutral .vote-status{background:rgba(0,212,255,0.12);color:var(--cyan);}
-.vote-card.v-abstain .vote-status{background:rgba(74,101,128,0.2);color:var(--gray);}
-
-.vote-confidence{
-  display:flex;align-items:center;gap:8px;
-  margin:8px 0 10px;
-  font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--gray);
-}
-.confidence-bar{flex:1;height:4px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;}
-.confidence-fill{height:100%;border-radius:2px;transition:width 0.6s ease;}
-.vote-card.v-bullish .confidence-fill{background:var(--green);}
-.vote-card.v-bearish .confidence-fill{background:var(--red);}
-.vote-card.v-neutral .confidence-fill{background:var(--cyan);}
-.vote-card.v-abstain .confidence-fill{background:var(--gray);}
-
-.vote-reason{
-  font-size:11px;color:var(--lgray);line-height:1.6;
-  padding-top:10px;border-top:1px dashed var(--border);
-}
-
-.vote-expand{
-  font-size:9px;color:var(--gray);font-family:'JetBrains Mono',monospace;
-  letter-spacing:1px;margin-top:8px;text-align:right;opacity:0.6;
-}
-
-/* ───── 招式細節展開區 ───── */
-.vote-detail{
-  display:none;
-  margin-top:10px;padding-top:10px;
-  border-top:1px dashed var(--border);
-}
-.vote-card.expanded .vote-detail{display:block;}
-
-.detail-row{
-  display:flex;justify-content:space-between;
-  font-size:10px;font-family:'JetBrains Mono',monospace;
-  padding:4px 0;color:var(--lgray);
-}
-.detail-row .k{color:var(--gray);}
-.detail-row .v{color:var(--white);}
-
-.candy-subs-title{
-  font-family:'Orbitron',sans-serif;font-size:9px;
-  color:var(--gold);letter-spacing:2px;margin:10px 0 6px;
-}
-.candy-sub{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:7px 10px;margin-bottom:4px;
-  background:rgba(0,0,0,0.25);border-radius:6px;
-  font-size:10px;
-}
-.candy-sub-name{color:var(--lgray);}
-.candy-sub-note{font-size:9px;color:var(--gray);margin-top:2px;font-family:'Noto Sans TC',sans-serif;}
-.candy-sub-score{
-  font-family:'JetBrains Mono',monospace;font-weight:700;
-  padding:2px 7px;border-radius:4px;font-size:10px;
-}
-.candy-sub-score.pos{color:var(--green);background:rgba(0,255,136,0.1);}
-.candy-sub-score.neg{color:var(--red);background:rgba(255,51,102,0.1);}
-.candy-sub-score.zero{color:var(--cyan);background:rgba(0,212,255,0.08);}
-.candy-sub-score.null{color:var(--gray);background:rgba(74,101,128,0.15);}
-
-.rule-box{
-  margin-top:10px;padding:8px 11px;
-  background:rgba(245,166,35,0.05);
-  border:1px solid rgba(245,166,35,0.2);
-  border-radius:6px;
-  font-size:10px;line-height:1.6;color:#C8A060;
-}
-.rule-box .rule-tag{
-  font-family:'Orbitron',sans-serif;font-size:8px;
-  color:var(--gold);letter-spacing:2px;display:block;margin-bottom:3px;
-}
-
-/* ───── 系統資訊區(底部) ───── */
-.sys-info{
-  padding:12px 16px;border-radius:8px;
-  background:rgba(0,0,0,0.25);border:1px solid var(--border);
-  font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--gray);
-  display:flex;gap:18px;flex-wrap:wrap;
-}
-.sys-info span{color:var(--lgray);}
-
-/* ───── 提示空白頁 ───── */
-.placeholder{
-  text-align:center;padding:60px 20px;color:var(--gray);
-  font-size:13px;line-height:1.8;
-}
-.placeholder-icon{
-  font-family:'Orbitron',sans-serif;font-size:14px;
-  color:var(--cyan);letter-spacing:3px;margin-bottom:14px;
-}
+  /* RWD */
+  @media (max-width: 600px) {
+    .info-row { grid-template-columns: 1fr; }
+    .conclusion-emoji { font-size: 40px; }
+    .conclusion-label { font-size: 20px; }
+  }
 </style>
 </head>
 <body>
-<div class="page">
 
-<!-- ───── 頂欄 ───── -->
-<div class="top-bar">
-  <div class="logo">5式 <span>VOTING ANALYSIS</span></div>
-  <div class="clock" id="clock">--:--:--  TW</div>
-</div>
+<div class="container">
 
-<!-- ───── User 狀態列 ───── -->
-<div class="user-bar">
-  <div><span class="lbl">USER</span> <span class="val" id="userIdShort">-</span></div>
-  <div><span class="lbl">API</span> <span class="val" id="apiStatus">就緒</span></div>
-</div>
-
-<!-- ───── 輸入區 ───── -->
-<div class="input-section">
-  <div class="input-row">
-    <div class="input-group">
-      <div class="input-label">股票代號</div>
-      <input class="stock-input" id="tickerInput" placeholder="ORCX" value="ORCX" onkeydown="if(event.key==='Enter')analyze()">
-    </div>
-    <div class="input-group">
-      <div class="input-label">市場</div>
-      <select class="market-select" id="marketSelect">
-        <option value="US">美股  US</option>
-        <option value="TW">台股  TW</option>
-      </select>
-    </div>
-    <button class="analyze-btn" id="analyzeBtn" onclick="analyze()">ANALYZE</button>
-  </div>
-  <div class="quick-row">
-    <span class="quick-label">QUICK :</span>
-    <button class="quick-tag holding" onclick="quickStock('ORCX','US')">ORCX 333股</button>
-    <button class="quick-tag holding" onclick="quickStock('SMUP','US')">SMUP 1072股</button>
-    <button class="quick-tag market" onclick="quickStock('SPY','US')">SPY 大盤</button>
-    <button class="quick-tag market" onclick="quickStock('QQQ','US')">QQQ 科技</button>
-    <button class="quick-tag market" onclick="quickStock('VIX','US')">VIX 恐慌</button>
-  </div>
-</div>
-
-<!-- ───── Loading ───── -->
-<div class="loading" id="loading">
-  <div class="loading-text">5 式投票分析中 ...</div>
-</div>
-
-<!-- ───── Error ───── -->
-<div class="error-box" id="errorBox">
-  <strong>ERROR</strong>
-  <span id="errorMsg">-</span>
-</div>
-
-<!-- ───── 預設提示 ───── -->
-<div class="placeholder" id="placeholder">
-  <div class="placeholder-icon">READY</div>
-  輸入股票代號或點擊 Quick 標籤<br>
-  系統會調用 5 式投票引擎分析多空訊號
-</div>
-
-<!-- ───── 主體 ───── -->
-<div id="resultArea" style="display:none">
-
-  <!-- 大跌警報橫條 -->
-  <div class="alert-strip" id="alertStrip">
-    <div class="alert-icon">⚠</div>
-    <div class="alert-text">CRASH ALERT — 大跌警報觸發,動作已自動降級</div>
-    <div class="alert-tag">RISK</div>
+  <div class="header">
+    <a href="dashboard_v5.html" class="back-btn" id="backBtn">← 回總覽</a>
+    <button class="refresh-btn" id="refreshBtn" onclick="loadAnalysis()">🔄 重新分析</button>
   </div>
 
-  <!-- 結論區 -->
-  <div class="verdict-panel">
-    <div class="section-title">FINAL VERDICT</div>
-    <div class="verdict-layout">
-      <div class="verdict-circle" id="verdictCircle">
-        <div class="verdict-num" id="verdictNum">--</div>
-        <div class="verdict-den">VOTES</div>
-      </div>
-      <div class="verdict-info">
-        <div class="verdict-label" id="verdictLabel">分析中</div>
-        <div class="verdict-bar-outer">
-          <div class="vb-bull" id="vbBull" style="width:0%"></div>
-          <div class="vb-neutral" id="vbNeutral" style="width:0%"></div>
-          <div class="vb-bear" id="vbBear" style="width:0%"></div>
-        </div>
-        <div class="verdict-detail" id="verdictDetail">--</div>
-      </div>
-    </div>
-    <div class="action-box ab-watch" id="actionBox">
-      <div class="ab-title">操作建議</div>分析中...
-    </div>
+  <h1 id="symbolTitle">載入中...</h1>
+  <div class="subtitle" id="lastUpdate"></div>
+
+  <!-- 大跌警報 -->
+  <div id="alertBanner"></div>
+
+  <!-- 結論 -->
+  <div id="conclusion"></div>
+
+  <!-- 持有期 + 槓桿耗損 -->
+  <div id="infoRow"></div>
+
+  <!-- 5 式投票 -->
+  <div id="votesArea"></div>
+
+  <!-- 狀態區 -->
+  <div id="stateBox" class="state-box">
+    <div class="spinner"></div>
+    <div>跑 5 式分析中(可能要 20-40 秒)...</div>
   </div>
 
-  <!-- 5 式投票卡 -->
-  <div class="section-title">5 STRATEGIES VOTING</div>
-  <div class="votes-grid" id="votesGrid"></div>
-
-  <!-- 系統資訊 -->
-  <div class="sys-info" id="sysInfo">
-    <div>SYMBOL <span id="siSymbol">-</span></div>
-    <div>PRICE <span id="siPrice">-</span></div>
-    <div>SOURCE <span id="siSource">10_voting.gs v1.0</span></div>
-    <div>TIME <span id="siTime">-</span></div>
+  <div class="footer">
+    美股神器 v6.0 · 5 式投票:Premium / CANDY / Whale / Crash / Jiansrc
   </div>
-
-</div>
 
 </div>
 
 <script>
-// ════════════════════════════════════
-// 設定區
-// ════════════════════════════════════
+// ========== 設定 ==========
+const API_URL = 'https://script.google.com/macros/s/AKfycbzjaRxJhYkqNIaJaFxvSiy0L120H0m0k7NY_Vc6IXIw70kO2SIvf3fOf26TnhApTgrg/exec';
 
-const API_URL = "https://script.google.com/macros/s/AKfycbzjaRxJhYkqNIaJaFxvSiy0L120H0m0k7NY_Vc6IXIw70kO2SIvf3fOf26TnhApTgrg/exec";
-
-const DEFAULT_USER_ID = "U657f8f31abbff90fdbc1ef4a34e16c0c";
-
-// 5 式對應的中文名 + 來源 + 規則說明
-const STRATEGY_META = {
-  premium:  {
-    num:"01", name:"老練股神  PREMIUM", source:"開盤溢價率公式",
-    rule:"老練股神公式:開盤溢價 < 0% 看空、3-5% 健康看多、>5% 主力搶籌極強。盤後與收盤後不判斷。"
-  },
-  candy:    {
-    num:"02", name:"CANDY 戰法", source:"7 子式加權評分",
-    rule:"RA 親自從 CINDY 18 張截圖反推:7 子式加權 — 五均線守線、主力趨勢線、強度三要件、量比突變、MACD 背離、多頭排列、籌碼密集突破。"
-  },
-  substack: {
-    num:"03", name:"大叔  SUBSTACK", source:"Claude 文章情緒分析",
-    rule:"Claude 分析最近一篇大叔的 Substack 文章對該股的看法,沒提到就棄權。"
-  },
-  whale:    {
-    num:"04", name:"鯨魚偵測  WHALE", source:"量爆 + 漲跌方向",
-    rule:"量比超過 2 倍且漲 = 機構吸籌、量比超過 2 倍且跌 = 機構出貨。量沒爆就棄權。"
-  },
-  crash:    {
-    num:"05", name:"大跌心智圖  CRASH", source:"RSI 反彈判斷",
-    rule:"股價沒大跌(跌 < 3%)時棄權。大跌觸發時看 RSI:RSI<30 超賣可能反彈、>70 高位崩跌警戒。"
-  }
+const FORMULA_LABELS = {
+  premium: { num: '式 1', name: '老練股神 · 開盤溢價率', emoji: '📈' },
+  candy:   { num: '式 2', name: 'CANDY · 綜合戰法',       emoji: '🍬' },
+  whale:   { num: '式 3', name: '鯨魚偵測 · 主力進出',     emoji: '🐳' },
+  crash:   { num: '式 4', name: '大跌警報 · 心智圖',       emoji: '⚠️' },
+  jiansrc: { num: '式 5', name: '熱題材 · 白名單偵測',     emoji: '🔥' }
 };
 
-const STRATEGY_ORDER = ["premium", "candy", "substack", "whale", "crash"];
+const FORMULA_ORDER = ['premium', 'candy', 'whale', 'crash', 'jiansrc'];
 
-// CANDY 7 子式名稱對照
-const CANDY_SUB_NAMES = {
-  s1_ma_hold:    "五均線守線",
-  s2_main_line:  "主力趨勢線(彩虹MA)",
-  s3_strength:   "強度三要件",
-  s6_volratio:   "量比突變(查資金盤)",
-  s7_macd_div:   "MACD 背離",
-  s8_arrange:    "均線多空排列",
-  s9_chip:       "籌碼密集突破"
+const SUB_LABELS = {
+  s1_ma_hold:     '5 均線守住',
+  s2_main_line:   '主力趨勢線',
+  s3_strength:    '強度三要件',
+  s6_volratio:    '量比異常',
+  s7_macd_div:    'MACD 背離',
+  s8_arrange:     '均線排列',
+  s9_chip:        '籌碼集中度'
 };
 
-// 後端 action → 大字白話
-const ACTION_BIG = {
-  "加碼":   "BUY MORE",
-  "持有":   "HOLD",
-  "賣1/3":  "SELL 1/3",
-  "賣半":   "SELL 50%",
-  "全出":   "EXIT ALL"
-};
-const ACTION_BIG_TC = {
-  "加碼":   "可以多買",
-  "持有":   "抱緊就好",
-  "賣1/3":  "賣一點",
-  "賣半":   "賣一半",
-  "全出":   "全部賣掉"
+const VOTE_BADGE = {
+  bullish: { txt: '🟢 看多', cls: 'bullish' },
+  bearish: { txt: '🔴 看空', cls: 'bearish' },
+  neutral: { txt: '🟡 中性', cls: 'neutral' },
+  abstain: { txt: '⚪ 棄權', cls: 'abstain' }
 };
 
-// ════════════════════════════════════
-// 取 userId
-// ════════════════════════════════════
-function getUserId() {
-  const params = new URLSearchParams(window.location.search);
-  return params.get("id") || params.get("userId") || DEFAULT_USER_ID;
-}
-
-// ════════════════════════════════════
-// JSONP 跨域呼叫
-// ════════════════════════════════════
-let _jsonpCounter = 0;
-
+// ========== JSONP ==========
 function jsonp(url, params) {
   return new Promise((resolve, reject) => {
-    const cbName = "jsonpCb_" + (++_jsonpCounter) + "_" + Date.now();
-    const timeoutId = setTimeout(() => {
+    const cb = 'jsonp_cb_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+    const timeout = setTimeout(() => {
       cleanup();
-      reject(new Error("API 逾時(30秒),請檢查網路或 GAS 部署狀態"));
-    }, 30000);
+      reject(new Error('請求逾時(60秒)'));
+    }, 60000);
 
     function cleanup() {
-      clearTimeout(timeoutId);
-      try { delete window[cbName]; } catch(e) { window[cbName] = undefined; }
-      const s = document.getElementById(cbName);
-      if (s) s.parentNode.removeChild(s);
+      clearTimeout(timeout);
+      delete window[cb];
+      if (script.parentNode) script.parentNode.removeChild(script);
     }
 
-    window[cbName] = function(data) {
+    window[cb] = (data) => {
       cleanup();
       resolve(data);
     };
 
-    const qs = Object.keys(params).map(k =>
-      encodeURIComponent(k) + "=" + encodeURIComponent(params[k])
-    ).join("&");
+    const qs = Object.entries({ ...params, callback: cb })
+      .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+      .join('&');
 
-    const script = document.createElement("script");
-    script.id = cbName;
-    script.src = url + "?" + qs + "&callback=" + cbName;
+    const script = document.createElement('script');
+    script.src = `${url}?${qs}`;
     script.onerror = () => {
       cleanup();
-      reject(new Error("API 連線失敗,請檢查 GAS 部署網址"));
+      reject(new Error('網路錯誤'));
     };
-    document.body.appendChild(script);
+    document.head.appendChild(script);
   });
 }
 
-// ════════════════════════════════════
-// 主分析函式
-// ════════════════════════════════════
-async function analyze() {
-  const ticker = document.getElementById("tickerInput").value.trim().toUpperCase();
-  const market = document.getElementById("marketSelect").value;
-  if (!ticker) {
-    showError("請輸入股票代號");
-    return;
-  }
+// ========== 工具 ==========
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 
-  document.getElementById("placeholder").style.display = "none";
-  document.getElementById("errorBox").classList.remove("show");
-  document.getElementById("resultArea").style.display = "none";
-  document.getElementById("alertStrip").classList.remove("show");
-  document.getElementById("loading").classList.add("show");
-  document.getElementById("analyzeBtn").disabled = true;
-  document.getElementById("apiStatus").textContent = "分析中…";
-  document.getElementById("apiStatus").style.color = "var(--orange)";
+function getParam(name) {
+  return new URL(window.location.href).searchParams.get(name) || '';
+}
 
-  try {
-    const userId = getUserId();
-    const data = await jsonp(API_URL, {
-      action: "analyze",
-      userId: userId,
-      symbol: ticker,
-      market: market
-    });
+function getUserId() {
+  return getParam('userId') || localStorage.getItem('userId') || '';
+}
 
-    // v3.1.2 後端用 ok,不是 success
-    if (!data || data.ok === false) {
-      throw new Error((data && data.error) || "API 回傳異常");
-    }
+function fmtPct(v) {
+  if (v == null || isNaN(v)) return '—';
+  const sign = v >= 0 ? '+' : '';
+  return `${sign}${Number(v).toFixed(2)}%`;
+}
 
-    renderResult(ticker, market, data);
-    document.getElementById("apiStatus").textContent = "成功";
-    document.getElementById("apiStatus").style.color = "var(--green)";
-  } catch (e) {
-    showError(e.message || String(e));
-    document.getElementById("apiStatus").textContent = "失敗";
-    document.getElementById("apiStatus").style.color = "var(--red)";
-  } finally {
-    document.getElementById("loading").classList.remove("show");
-    document.getElementById("analyzeBtn").disabled = false;
+function fmtNum(v, digits = 2) {
+  if (v == null || isNaN(v)) return '—';
+  return Number(v).toFixed(digits);
+}
+
+// ========== 渲染 ==========
+function renderAlert(votes) {
+  const conc = votes.conclusion || {};
+  const banner = document.getElementById('alertBanner');
+  if (conc.alertNote && conc.alertNote.trim() !== '') {
+    banner.innerHTML = `<div class="alert-banner">${escapeHtml(conc.alertNote)}</div>`;
+  } else {
+    banner.innerHTML = '';
   }
 }
 
-// ════════════════════════════════════
-// 顯示錯誤
-// ════════════════════════════════════
-function showError(msg) {
-  const box = document.getElementById("errorBox");
-  document.getElementById("errorMsg").textContent = msg;
-  box.classList.add("show");
-  document.getElementById("resultArea").style.display = "none";
-}
+function renderConclusion(votes) {
+  const conc = votes.conclusion || {};
+  const signal = conc.finalSignal || 'insufficient';
+  const counts = conc.counts || {};
 
-// ════════════════════════════════════
-// 渲染結果
-// ════════════════════════════════════
-function renderResult(ticker, market, data) {
-  document.getElementById("resultArea").style.display = "block";
-
-  // 大跌警報
-  if (data.alert) {
-    document.getElementById("alertStrip").classList.add("show");
-  }
-
-  // 系統資訊
-  document.getElementById("siSymbol").textContent = ticker + " (" + market + ")";
-  // ticker price 從 votes.premium.raw.session 或其他地方拿,這版直接顯示 N/A
-  document.getElementById("siPrice").textContent = "—";
-  document.getElementById("siTime").textContent = formatTime(data.timestamp);
-
-  const votes = data.votes || {};
-  renderVoteCards(votes);
-
-  const counts = data.tally || countVotes(votes);
-  renderVerdict(counts, data);
-}
-
-// ════════════════════════════════════
-// 渲染 5 式卡片
-// ════════════════════════════════════
-function renderVoteCards(votes) {
-  const grid = document.getElementById("votesGrid");
-  grid.innerHTML = "";
-
-  STRATEGY_ORDER.forEach((key, i) => {
-    const meta = STRATEGY_META[key];
-    // v3.1.2 真實欄位:vote / conf / note / raw
-    const v = votes[key] || { vote:"abstain", conf:0, note:"後端無資料", raw:null };
-
-    const voteVal = (v.vote || "abstain").toLowerCase();
-    // conf 是 0~1 → 轉 0~100
-    const conf = Math.max(0, Math.min(100, Math.round((parseFloat(v.conf) || 0) * 100)));
-    const note = v.note || "(無說明)";
-
-    let cls, label;
-    if (voteVal === "bullish") {
-      cls = "v-bullish"; label = "看多";
-    } else if (voteVal === "bearish") {
-      cls = "v-bearish"; label = "看空";
-    } else if (voteVal === "neutral") {
-      cls = "v-neutral"; label = "中性";
-    } else {
-      cls = "v-abstain"; label = "棄權";
-    }
-
-    const card = document.createElement("div");
-    card.className = "vote-card " + cls;
-    card.style.animationDelay = (i * 0.06) + "s";
-    card.dataset.key = key;
-
-    let detailHtml = renderVoteDetail(key, v, meta);
-
-    card.innerHTML = `
-      <div class="vote-status">${label}</div>
-      <div class="vote-header">
-        <div class="vote-num">${meta.num}</div>
-        <div>
-          <div class="vote-title">${meta.name}</div>
-          <div class="vote-source">${meta.source}</div>
-        </div>
-      </div>
-      <div class="vote-confidence">
-        <span>信心度</span>
-        <div class="confidence-bar"><div class="confidence-fill" style="width:${conf}%"></div></div>
-        <span>${conf}%</span>
-      </div>
-      <div class="vote-reason">${escapeHtml(note)}</div>
-      <div class="vote-expand">[ 點擊展開細節 ▾ ]</div>
-      <div class="vote-detail">${detailHtml}</div>
-    `;
-    card.addEventListener("click", () => {
-      card.classList.toggle("expanded");
-      const exp = card.querySelector(".vote-expand");
-      exp.textContent = card.classList.contains("expanded")
-        ? "[ 點擊收合細節 ▴ ]"
-        : "[ 點擊展開細節 ▾ ]";
-    });
-    grid.appendChild(card);
-  });
-}
-
-// ════════════════════════════════════
-// 渲染招式細節(展開區)
-// ════════════════════════════════════
-function renderVoteDetail(key, v, meta) {
-  let html = "";
-
-  // 各招式不同的原始數據
-  const raw = v.raw || {};
-
-  if (key === "premium") {
-    if (typeof raw.pct === "number") html += detailRow("溢價率", raw.pct.toFixed(2) + "%");
-    if (raw.source) html += detailRow("資料來源", raw.source);
-    if (raw.session) html += detailRow("盤別", sessionLabel(raw.session));
-  }
-  else if (key === "candy") {
-    if (typeof raw.score === "number") html += detailRow("綜合分數", raw.score.toFixed(2));
-    // 7 子式
-    if (raw.sub) {
-      html += `<div class="candy-subs-title">7 SUB INDICATORS</div>`;
-      for (const subKey of Object.keys(CANDY_SUB_NAMES)) {
-        const sub = raw.sub[subKey];
-        if (!sub) continue;
-        html += renderCandySub(subKey, sub);
-      }
-    }
-  }
-  else if (key === "substack") {
-    if (raw.article) {
-      if (raw.article.subject) html += detailRow("文章", raw.article.subject);
-      if (raw.article.dateStr) html += detailRow("日期", raw.article.dateStr);
-    }
-  }
-  else if (key === "whale") {
-    if (raw.whaleStr) html += detailRow("偵測", raw.whaleStr);
-    if (typeof raw.vol === "number") html += detailRow("成交量", formatNum(raw.vol));
-    if (typeof raw.avgVol === "number") html += detailRow("平均量", formatNum(raw.avgVol));
-  }
-  else if (key === "crash") {
-    if (typeof raw.pct === "number") html += detailRow("當日漲跌", raw.pct.toFixed(2) + "%");
-    if (typeof raw.rsi === "number") html += detailRow("RSI(14)", raw.rsi.toFixed(1));
-    html += detailRow("警報狀態", raw.alert ? "已觸發" : "未觸發");
-  }
-
-  // 規則說明
-  html += `<div class="rule-box">
-    <span class="rule-tag">RULE</span>
-    ${escapeHtml(meta.rule)}
+  const html = `<div class="conclusion-card ${signal}">
+    <div class="conclusion-emoji">${conc.signalEmoji || '⚪'}</div>
+    <div class="conclusion-label ${signal}">${escapeHtml(conc.signalLabel || '訊號不足')}</div>
+    <div class="conclusion-suggestion">${escapeHtml(conc.suggestion || '—')}</div>
+    <div class="conclusion-stats">
+      <span>看多權重 <strong>${fmtNum(conc.bullishWeight, 2)}</strong></span>
+      <span>看空權重 <strong>${fmtNum(conc.bearishWeight, 2)}</strong></span>
+      <span>比值 <strong>${fmtNum(conc.ratio, 2)}</strong></span>
+      <span>有效票 <strong>${counts.valid || 0}/5</strong></span>
+    </div>
   </div>`;
+  document.getElementById('conclusion').innerHTML = html;
+}
+
+function renderInfoRow(votes) {
+  const hp = votes.holdingPeriod || {};
+  const ld = votes.leverageDecay || {};
+
+  // 持有期
+  let hpHtml = '';
+  if (hp.label) {
+    const lockIcon = hp.locked ? '<span class="lock-icon">🔒 已鎖定</span>' : '';
+    const warning = hp.isUnclassified ? '<div class="unclassified-warning">⚠️ 未分類,系統用預設規則</div>' : '';
+    hpHtml = `<div class="info-card" style="border-left-color:${hp.color || '#5a6a80'};">
+      <div class="info-label">📅 持有期分類${lockIcon}</div>
+      <div class="info-main" style="color:${hp.color || '#FFF'};">${escapeHtml(hp.label)}</div>
+      <div class="info-sub">${escapeHtml(hp.reason || '—')}</div>
+      ${warning}
+    </div>`;
+  }
+
+  // 槓桿耗損
+  let ldHtml = '';
+  if (ld.ok) {
+    if (ld.isLeveraged) {
+      const decayPct = ld.decayPct;
+      const color = ld.decayColor || '#a8b8c8';
+      const levelLabel = { mild: '輕微', warn: '警戒', severe: '嚴重' }[ld.decayLevel] || '—';
+      ldHtml = `<div class="info-card" style="border-left-color:${color};">
+        <div class="info-label">⚖️ 槓桿耗損(${ld.days || 90}天)</div>
+        <div class="info-main" style="color:${color};">${decayPct != null ? fmtNum(decayPct, 2) + '% (' + levelLabel + ')' : '—'}</div>
+        <div class="info-sub">
+          標的 ${escapeHtml(ld.underlying || '?')}${ld.underlyingName ? '(' + escapeHtml(ld.underlyingName) + ')' : ''} · ${ld.multiplier || '?'}x<br>
+          理論 ${fmtPct((ld.theoreticalReturn || 0) * 100)} → 實際 ${fmtPct((ld.actualReturn || 0) * 100)}
+        </div>
+      </div>`;
+    } else {
+      ldHtml = `<div class="info-card" style="border-left-color:#5a6a80;">
+        <div class="info-label">⚖️ 槓桿耗損</div>
+        <div class="info-main" style="color:#a8b8c8;">非槓桿 ETF</div>
+        <div class="info-sub">${escapeHtml(ld.note || '無耗損計算')}</div>
+      </div>`;
+    }
+  }
+
+  document.getElementById('infoRow').innerHTML =
+    (hpHtml || ldHtml) ? `<div class="info-row">${hpHtml}${ldHtml}</div>` : '';
+}
+
+function renderSubList(candy) {
+  const raw = candy.raw || {};
+  const sub = raw.sub || {};
+  if (!sub || Object.keys(sub).length === 0) {
+    return '<div class="raw-block">CANDY 子式資料未取得</div>';
+  }
+  const items = Object.entries(SUB_LABELS).map(([key, label]) => {
+    const v = sub[key];
+    if (v == null) {
+      return `<div class="sub-item">
+        <span class="sub-name">${label}</span>
+        <span class="sub-val abstain">— 未取得</span>
+      </div>`;
+    }
+    // sub 可能是字串 vote、或物件 {vote, conf}
+    let vote = typeof v === 'string' ? v : (v.vote || 'abstain');
+    let conf = typeof v === 'object' ? v.conf : null;
+    const badge = VOTE_BADGE[vote] || VOTE_BADGE.abstain;
+    return `<div class="sub-item">
+      <span class="sub-name">${label}</span>
+      <span class="sub-val ${badge.cls}">${badge.txt}${conf != null ? ' (' + fmtNum(conf, 2) + ')' : ''}</span>
+    </div>`;
+  }).join('');
+  const score = raw.score != null ? `<div style="color:#F5A623;font-size:12px;margin-bottom:8px;">CANDY 綜合分數: ${fmtNum(raw.score, 2)}</div>` : '';
+  return score + items;
+}
+
+function renderRawBlock(key, raw) {
+  if (!raw || typeof raw !== 'object') return '';
+  const items = [];
+
+  if (key === 'premium') {
+    if (raw.pct != null) items.push(`溢價率: ${fmtPct(raw.pct)}`);
+    if (raw.session) items.push(`時段: ${raw.session}`);
+    if (raw.source) items.push(`資料源: ${raw.source}`);
+  } else if (key === 'whale') {
+    if (raw.vol != null && raw.avgVol != null) {
+      items.push(`成交量: ${Number(raw.vol).toLocaleString()}`);
+      items.push(`平均量: ${Number(raw.avgVol).toLocaleString()}`);
+      items.push(`量比: ${fmtNum(raw.vol / raw.avgVol, 2)}x`);
+    }
+    if (raw.whaleStr) items.push(`鯨魚強度: ${raw.whaleStr}`);
+  } else if (key === 'crash') {
+    if (raw.pct != null) items.push(`漲跌: ${fmtPct(raw.pct)}`);
+    if (raw.alert) items.push(`警報: ${raw.alert}`);
+    if (raw.rsi != null) items.push(`RSI: ${fmtNum(raw.rsi, 1)}`);
+  } else if (key === 'jiansrc') {
+    if (raw.bullScore != null) items.push(`多頭分: ${fmtNum(raw.bullScore, 2)}`);
+    if (raw.bearScore != null) items.push(`空頭分: ${fmtNum(raw.bearScore, 2)}`);
+    if (raw.netScore != null) items.push(`淨分: ${fmtNum(raw.netScore, 2)}`);
+  }
+
+  let html = items.length ? `<div class="raw-block">${items.join(' · ')}</div>` : '';
+
+  // jiansrc 理由標籤
+  if (key === 'jiansrc' && raw.reasons) {
+    const bull = (raw.reasons.bullish || []).map(r => `<span class="reason-tag bull">+ ${escapeHtml(r)}</span>`).join('');
+    const bear = (raw.reasons.bearish || []).map(r => `<span class="reason-tag bear">− ${escapeHtml(r)}</span>`).join('');
+    if (bull || bear) {
+      html += `<div class="reason-list">${bull}${bear}</div>`;
+    }
+  }
 
   return html;
 }
 
-function detailRow(k, v) {
-  return `<div class="detail-row"><span class="k">${escapeHtml(k)}</span><span class="v">${escapeHtml(String(v))}</span></div>`;
-}
+function renderVotes(votes) {
+  const wrap = document.getElementById('votesArea');
+  let html = '<div class="votes-title">🗳️ 5 式投票結果</div>';
 
-function renderCandySub(subKey, sub) {
-  const name = CANDY_SUB_NAMES[subKey] || subKey;
-  let scoreCls, scoreText;
-  if (sub.score === null || typeof sub.score !== "number") {
-    scoreCls = "null"; scoreText = "N/A";
-  } else if (sub.score > 0.1) {
-    scoreCls = "pos"; scoreText = "+" + sub.score.toFixed(2);
-  } else if (sub.score < -0.1) {
-    scoreCls = "neg"; scoreText = sub.score.toFixed(2);
-  } else {
-    scoreCls = "zero"; scoreText = sub.score.toFixed(2);
-  }
+  FORMULA_ORDER.forEach(key => {
+    const v = votes[key];
+    if (!v) {
+      html += `<div class="vote-card abstain">
+        <div class="vote-header">
+          <div class="vote-name"><span class="formula-num">${FORMULA_LABELS[key].num}</span>${FORMULA_LABELS[key].emoji} ${FORMULA_LABELS[key].name}</div>
+          <span class="vote-badge abstain">⚪ 未取得</span>
+        </div>
+        <div class="vote-note">後端未回傳此式資料</div>
+      </div>`;
+      return;
+    }
 
-  return `<div class="candy-sub">
-    <div style="flex:1;">
-      <div class="candy-sub-name">${escapeHtml(name)}</div>
-      <div class="candy-sub-note">${escapeHtml(sub.note || "—")}</div>
-    </div>
-    <div class="candy-sub-score ${scoreCls}">${scoreText}</div>
-  </div>`;
-}
+    const vote = v.vote || 'abstain';
+    const badge = VOTE_BADGE[vote] || VOTE_BADGE.abstain;
+    const conf = v.conf != null ? `<span class="vote-conf">conf ${fmtNum(v.conf, 2)}</span>` : '';
+    const lbl = FORMULA_LABELS[key];
+    const isCandy = (key === 'candy');
 
-// ════════════════════════════════════
-// 計算多空票數(備援用,優先用 data.tally)
-// ════════════════════════════════════
-function countVotes(votes) {
-  let bullish = 0, bearish = 0, neutral = 0, abstain = 0;
-  STRATEGY_ORDER.forEach(k => {
-    const v = votes[k];
-    if (!v) { abstain++; return; }
-    const vv = (v.vote || "abstain").toLowerCase();
-    if (vv === "bullish") bullish++;
-    else if (vv === "bearish") bearish++;
-    else if (vv === "neutral") neutral++;
-    else abstain++;
+    html += `<div class="vote-card ${badge.cls}">
+      <div class="vote-header">
+        <div class="vote-name"><span class="formula-num">${lbl.num}</span>${lbl.emoji} ${lbl.name}</div>
+        <div><span class="vote-badge ${badge.cls}">${badge.txt}</span>${conf}</div>
+      </div>
+      <div class="vote-note">${escapeHtml(v.note || '—')}</div>
+      ${renderRawBlock(key, v.raw)}
+      ${isCandy ? `<div class="vote-toggle" onclick="toggleSub('candySub')">▾ 展開 7 子式</div>
+                   <div class="sub-list" id="candySub">${renderSubList(v)}</div>` : ''}
+    </div>`;
   });
-  return { bullish, bearish, neutral, abstain };
+
+  wrap.innerHTML = html;
 }
 
-// ════════════════════════════════════
-// 渲染最終結論(用後端 action + reason)
-// ════════════════════════════════════
-function renderVerdict(counts, data) {
-  // tally 用後端真實欄位 bullish/bearish/neutral/abstain
-  const bull    = counts.bullish || 0;
-  const bear    = counts.bearish || 0;
-  const neutral = counts.neutral || 0;
-  const abstain = counts.abstain || 0;
+function toggleSub(id) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.classList.toggle('show');
+    const toggle = el.previousElementSibling;
+    if (toggle && toggle.classList.contains('vote-toggle')) {
+      toggle.textContent = el.classList.contains('show') ? '▴ 收合' : '▾ 展開 7 子式';
+    }
+  }
+}
 
-  // 三段條圖
-  const total = 5;
-  document.getElementById("vbBull").style.width    = (bull / total * 100) + "%";
-  document.getElementById("vbNeutral").style.width = ((neutral + abstain) / total * 100) + "%";
-  document.getElementById("vbBear").style.width    = (bear / total * 100) + "%";
+function renderUpdate(data) {
+  const ts = data.timestamp ? new Date(data.timestamp) : new Date();
+  document.getElementById('lastUpdate').textContent = `分析時間: ${ts.toLocaleString('zh-TW', { hour12: false })}`;
+}
 
-  const numEl = document.getElementById("verdictNum");
-  const circle = document.getElementById("verdictCircle");
-  const labelEl = document.getElementById("verdictLabel");
-  const detailEl = document.getElementById("verdictDetail");
-  const actionBox = document.getElementById("actionBox");
+// ========== 主流程 ==========
+async function loadAnalysis() {
+  const symbol = getParam('symbol').toUpperCase();
+  const userId = getUserId();
 
-  // 中央圓圈顯示「多-空」差
-  const score = bull - bear;
-  numEl.textContent = (score > 0 ? "+" : "") + score;
-  detailEl.textContent = `多 ${bull}  空 ${bear}  中 ${neutral}  棄權 ${abstain}`;
-
-  // 後端 action 是中文,直接用
-  const action = data.action || "持有";
-  const actionEN = ACTION_BIG[action] || action;
-  const actionTC = ACTION_BIG_TC[action] || action;
-  const reason = data.reason || "—";
-
-  // 配色根據 action(不是分數差)
-  let color, verdictLabel, actionCls, actionTitle;
-
-  if (action === "加碼") {
-    color = "var(--green)";
-    verdictLabel = "BUY MORE  加碼訊號";
-    actionCls = "ab-buy";
-    actionTitle = "操作建議";
-  } else if (action === "持有") {
-    color = "var(--cyan)";
-    verdictLabel = "HOLD  持有觀望";
-    actionCls = "ab-watch";
-    actionTitle = "操作建議";
-  } else if (action === "賣1/3") {
-    color = "var(--orange)";
-    verdictLabel = "SELL 1/3  賣 1/3 減壓";
-    actionCls = "ab-caution";
-    actionTitle = "風險警示";
-  } else if (action === "賣半") {
-    color = "var(--orange)";
-    verdictLabel = "SELL 50%  賣半倉";
-    actionCls = "ab-caution";
-    actionTitle = "風險警示";
-  } else if (action === "全出") {
-    color = "var(--red)";
-    verdictLabel = "EXIT ALL  全部出場";
-    actionCls = "ab-danger";
-    actionTitle = "風險警示";
-  } else {
-    color = "var(--gray)";
-    verdictLabel = "INSUFFICIENT  資料不足";
-    actionCls = "ab-watch";
-    actionTitle = "提示";
+  if (!symbol) {
+    document.getElementById('symbolTitle').textContent = '⚠️ 缺少股票代號';
+    document.getElementById('stateBox').className = 'state-box error';
+    document.getElementById('stateBox').innerHTML = '請從 dashboard 點選股票進入,或檢查 URL 是否有 ?symbol=XXX';
+    return;
   }
 
-  numEl.style.color = color;
-  circle.style.borderColor = color;
-  labelEl.style.color = color;
-  labelEl.textContent = verdictLabel;
+  if (!userId) {
+    document.getElementById('symbolTitle').textContent = `${symbol}`;
+    document.getElementById('stateBox').className = 'state-box error';
+    document.getElementById('stateBox').innerHTML = '⚠️ 缺少 userId,請先到 dashboard 登入';
+    return;
+  }
 
-  // action box:大字白話 + 後端原因
-  actionBox.className = "action-box " + actionCls;
-  actionBox.innerHTML = `
-    <div class="ab-title">${actionTitle}</div>
-    <div class="action-big" style="color:${color};">${actionTC}</div>
-    <div>${escapeHtml(reason)}</div>
-  `;
-}
+  document.getElementById('symbolTitle').textContent = `📊 ${symbol} · 5 式分析`;
 
-// ════════════════════════════════════
-// 工具
-// ════════════════════════════════════
-function sessionLabel(s) {
-  const map = { PRE:"盤前", REGULAR:"盤中", POST:"盤後", closed:"收盤後" };
-  return map[s] || s;
-}
+  const btn = document.getElementById('refreshBtn');
+  const stateBox = document.getElementById('stateBox');
+  btn.disabled = true;
+  btn.textContent = '⏳ 分析中...';
+  stateBox.className = 'state-box';
+  stateBox.innerHTML = '<div class="spinner"></div><div>跑 5 式分析中(可能要 20-40 秒)...</div>';
+  stateBox.style.display = 'block';
 
-function formatNum(n) {
-  if (typeof n !== "number") return String(n);
-  if (n >= 1e9)  return (n/1e9).toFixed(2) + "B";
-  if (n >= 1e6)  return (n/1e6).toFixed(2) + "M";
-  if (n >= 1e3)  return (n/1e3).toFixed(1) + "K";
-  return String(n);
-}
+  // 清空舊內容
+  document.getElementById('alertBanner').innerHTML = '';
+  document.getElementById('conclusion').innerHTML = '';
+  document.getElementById('infoRow').innerHTML = '';
+  document.getElementById('votesArea').innerHTML = '';
 
-function formatTime(t) {
-  if (!t) return "—";
   try {
-    const d = new Date(t);
-    const tw = new Date(d.getTime() + (8*60 + d.getTimezoneOffset())*60000);
-    const pad = n => String(n).padStart(2, "0");
-    return (tw.getMonth()+1) + "/" + tw.getDate() + " " + pad(tw.getHours()) + ":" + pad(tw.getMinutes());
-  } catch(e) { return "—"; }
-}
+    const data = await jsonp(API_URL, { action: 'analyze', userId, symbol });
 
-function escapeHtml(str) {
-  if (str == null) return "";
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
+    if (!data || data.ok !== true) {
+      throw new Error(data && data.error ? data.error : '回傳格式錯誤');
+    }
 
-// ════════════════════════════════════
-// Quick 標籤
-// ════════════════════════════════════
-function quickStock(ticker, market) {
-  document.getElementById("tickerInput").value = ticker;
-  document.getElementById("marketSelect").value = market;
-  analyze();
-}
+    const votes = data.votes || {};
 
-// ════════════════════════════════════
-// 時鐘
-// ════════════════════════════════════
-function updateClock() {
-  const now = new Date();
-  const tw = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Taipei" }));
-  const hh = String(tw.getHours()).padStart(2, "0");
-  const mm = String(tw.getMinutes()).padStart(2, "0");
-  const ss = String(tw.getSeconds()).padStart(2, "0");
-  document.getElementById("clock").textContent = `${hh}:${mm}:${ss}  TW`;
-}
+    renderAlert(votes);
+    renderConclusion(votes);
+    renderInfoRow(votes);
+    renderVotes(votes);
+    renderUpdate(data);
+    stateBox.style.display = 'none';
 
-// ════════════════════════════════════
-// 啟動
-// ════════════════════════════════════
-window.onload = function() {
-  const uid = getUserId();
-  document.getElementById("userIdShort").textContent = uid.slice(0, 8) + "...";
-
-  updateClock();
-  setInterval(updateClock, 1000);
-
-  // 如果 URL 有 ticker 參數,自動 analyze
-  const params = new URLSearchParams(window.location.search);
-  const t = params.get("ticker") || params.get("symbol");
-  if (t) {
-    document.getElementById("tickerInput").value = t.toUpperCase();
-    setTimeout(analyze, 200);
+  } catch (err) {
+    console.error('[analyze] 失敗', err);
+    stateBox.className = 'state-box error';
+    stateBox.innerHTML = `❌ 分析失敗: ${escapeHtml(err.message || String(err))}<br><br>
+      <button class="refresh-btn" onclick="loadAnalysis()">重試</button>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔄 重新分析';
   }
-};
+}
+
+// 啟動
+loadAnalysis();
 </script>
+
 </body>
 </html>
