@@ -663,20 +663,30 @@ body {
     <div class="sub">輸入代號或選 QUICK 開始 5 式分析</div>
   </div>
 
-  <div class="footer">SHENGI v6.3 · POWERED BY GAS + CLAUDE</div>
+  <div class="footer">SHENGI v6.4 · POWERED BY GAS + CLAUDE</div>
 
 </div>
 
 <script>
+// ════════════════════════════════════════════════
+// v6.4 (2026/05/01 第十八輪)
+//   修 GRAB 5 式 ERROR Bug:
+//   1. 拆掉 ALLOWED_SYMBOLS 白名單(後端會自己處理找不到的股票)
+//   2. 拆掉「進頁面就自動跑」(避免一進來就紅框)
+//   3. Quick 預設改成 4 個常用指標(VIX/SPY/QQQ/NVDA),
+//      用戶持股還是會自動 prepend 在前面
+//   4. 拆掉「不在白名單」「上傳券商截圖系統會自動加入白名單」誤導文字
+// ════════════════════════════════════════════════
+
 const API_URL = 'https://script.google.com/macros/s/AKfycbzjaRxJhYkqNIaJaFxvSiy0L120H0m0k7NY_Vc6IXIw70kO2SIvf3fOf26TnhApTgrg/exec';
 
-// 純指標白名單(不是 ETF,純看不能買,Quick 永遠允許)
-const MARKET_SYMBOLS = ['VIX'];
-
-// v6.3:Quick 預設只放純指標,有持股的用戶會動態 prepend 自己持股
-let ALLOWED_SYMBOLS = [...MARKET_SYMBOLS];
+// v6.4:Quick 預設 4 個常用指標(沒持股的新用戶也能玩)
+//       用戶持股會在 loadUserHoldings() 時自動 prepend 在最前面
 let QUICK_LIST = [
-  { sym: 'VIX', label: 'VIX 恐慌指數' }
+  { sym: 'VIX',  label: 'VIX 恐慌指數' },
+  { sym: 'SPY',  label: 'SPY 標普500' },
+  { sym: 'QQQ',  label: 'QQQ 納指100' },
+  { sym: 'NVDA', label: 'NVDA 輝達' }
 ];
 
 const FORMULA = {
@@ -779,10 +789,7 @@ async function runAnalysis() {
     setError('未取得 USER ID,請從 dashboard 進入或在 URL 加 ?userId=Uxxx');
     return;
   }
-  if (!ALLOWED_SYMBOLS.includes(sym)) {
-    setError(`SYMBOL ${esc(sym)} 不在白名單<br><br>目前可查:<br>${ALLOWED_SYMBOLS.join(' / ')}<br><br>新增持股請從 LINE @368ceoiv 上傳券商截圖,系統會自動加入白名單。`);
-    return;
-  }
+  // v6.4:拆掉前端白名單檢查 — 後端 runVoting() 會自己處理找不到的股票
 
   const newUrl = new URL(window.location.href);
   newUrl.searchParams.set('symbol', sym);
@@ -1052,7 +1059,8 @@ function toggleSub(id) {
   }
 }
 
-// v6.2 新增 / v6.3 修正:打 dashboard API 拿用戶持股,動態組 Quick 跟白名單
+// v6.4 改:打 dashboard API 拿用戶持股,prepend 到 Quick 前面
+//        不再維護 ALLOWED_SYMBOLS 白名單
 async function loadUserHoldings(userId) {
   try {
     const data = await jsonp(API_URL, { action: 'dashboard', userId });
@@ -1061,17 +1069,15 @@ async function loadUserHoldings(userId) {
         sym: h.ticker,
         label: `${h.ticker} ${(h.shares || 0).toLocaleString()}股`
       }));
-      // Quick:用戶持股放前面 + VIX 純指標
-      QUICK_LIST = [
+      // 用戶持股 prepend 到預設指標前面
+      // 用 Map 去重(用戶持股優先,預設指標若已重複不再加)
+      const seen = new Set(myStocks.map(s => s.sym));
+      const merged = [
         ...myStocks,
-        { sym: 'VIX', label: 'VIX 恐慌指數' }
+        ...QUICK_LIST.filter(q => !seen.has(q.sym))
       ];
-      // 白名單:用戶持股 + VIX
-      ALLOWED_SYMBOLS = [
-        ...myStocks.map(s => s.sym),
-        ...MARKET_SYMBOLS
-      ];
-      renderQuickTags(); // 重畫
+      QUICK_LIST = merged;
+      renderQuickTags();
     }
   } catch (e) {
     console.warn('[12steps] 無法載入持股,Quick 使用預設指標', e);
@@ -1084,17 +1090,18 @@ function init() {
   if (userId) {
     $('userTag').textContent = userId.substring(0, 10) + '...';
     localStorage.setItem('userId', userId);
-    // v6.2:背景載入用戶持股,不擋主流程
+    // 背景載入用戶持股,不擋主流程
     loadUserHoldings(userId);
   } else {
     $('userTag').textContent = '未登入';
     $('userTag').className = 'val err';
   }
 
+  // v6.4 改:URL 帶 symbol 只填到輸入框,不自動跑分析
+  //          (避免一進來就紅框,讓用戶主動點 ANALYZE)
   const sym = getSymbol();
   if (sym) {
     $('symbolInput').value = sym;
-    if (userId) runAnalysis();
   }
 }
 init();
