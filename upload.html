@@ -2,327 +2,125 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>設定持倉 | 美股神器</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>美股神器 - 重新導向中...</title>
+<!-- 此頁已棄用,自動跳轉到 GAS 原生上傳頁(09_api.gs getUploadPageHTML) -->
+<!-- v2.0 (2026/05/05):修 ORCX/SMUP 大屠殺案,改為 redirect -->
 <style>
-:root{--bg:#020A14;--card:#071525;--gold:#F5A623;--cyan:#00D4FF;--green:#00FF88;--red:#FF3366;--white:#E8F4FD;--gray:#4A6580;--border:rgba(0,212,255,0.12);}
+:root{
+  --bg:#020A14;--card:#071525;
+  --gold:#F5A623;--cyan:#00D4FF;--gray:#6E89A6;--white:#E8F4FD;
+}
 *{margin:0;padding:0;box-sizing:border-box;}
-body{background:var(--bg);color:var(--white);font-family:'Noto Sans TC',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;}
-body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(0,212,255,0.06) 0%,transparent 60%);pointer-events:none;}
-.container{width:100%;max-width:480px;position:relative;z-index:1;}
-.logo{text-align:center;margin-bottom:32px;}
-.logo-title{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;color:var(--gold);letter-spacing:3px;}
-.logo-sub{font-size:11px;color:var(--gray);font-family:'JetBrains Mono',monospace;letter-spacing:2px;margin-top:4px;}
-.main-card{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:28px 24px;margin-bottom:16px;}
-.card-title{font-family:'Orbitron',sans-serif;font-size:13px;color:var(--gold);letter-spacing:2px;margin-bottom:6px;}
-.card-desc{font-size:12px;color:var(--gray);line-height:1.7;margin-bottom:24px;}
-
-/* 上傳區 */
-.upload-zone{border:2px dashed rgba(0,212,255,0.25);border-radius:14px;padding:32px 20px;text-align:center;cursor:pointer;transition:all 0.3s;position:relative;background:rgba(0,212,255,0.02);}
-.upload-zone:hover,.upload-zone.dragover{border-color:var(--cyan);background:rgba(0,212,255,0.06);}
-.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
-.upload-icon{width:52px;height:52px;border-radius:14px;background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.2);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:22px;color:var(--cyan);font-family:'Orbitron',sans-serif;font-weight:900;}
-.upload-title{font-size:14px;font-weight:700;color:var(--white);margin-bottom:6px;}
-.upload-hint{font-size:11px;color:var(--gray);font-family:'JetBrains Mono',monospace;}
-.preview-box{display:none;margin-top:16px;position:relative;}
-.preview-box img{width:100%;border-radius:10px;}
-.preview-remove{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(255,51,102,0.8);border:none;cursor:pointer;color:white;font-size:14px;display:flex;align-items:center;justify-content:center;}
-
-/* 輸入 */
-.input-group{margin-top:20px;}
-.input-label{font-size:10px;color:var(--gray);font-family:'JetBrains Mono',monospace;letter-spacing:1px;margin-bottom:6px;display:block;text-transform:uppercase;}
-.user-input{width:100%;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--white);font-family:'JetBrains Mono',monospace;font-size:12px;transition:border-color 0.2s;}
-.user-input:focus{outline:none;border-color:var(--cyan);}
-.user-input::placeholder{color:var(--gray);}
-
-/* 按鈕 */
-.submit-btn{width:100%;margin-top:20px;padding:14px;background:linear-gradient(135deg,var(--cyan),#0099BB);border:none;border-radius:12px;color:#020A14;font-weight:900;font-size:14px;cursor:pointer;font-family:'Orbitron',sans-serif;letter-spacing:1px;transition:all 0.3s;}
-.submit-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,212,255,0.3);}
-.submit-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
-
-/* 進度 */
-.progress{display:none;margin-top:16px;}
-.progress-bar{height:3px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;}
-.progress-fill{height:100%;background:var(--cyan);border-radius:2px;transition:width 0.5s ease;width:0%;}
-.progress-text{font-size:11px;color:var(--cyan);font-family:'JetBrains Mono',monospace;text-align:center;margin-top:8px;}
-
-/* 結果 */
-.result-card{display:none;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:24px;margin-bottom:16px;animation:fadeUp 0.4s ease;}
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.result-title{font-family:'Orbitron',sans-serif;font-size:12px;color:var(--gold);letter-spacing:2px;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
-.result-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent);}
-.holding-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:8px;background:rgba(0,0,0,0.2);margin-bottom:8px;border:1px solid var(--border);}
-.holding-ticker{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:700;color:var(--gold);}
-.holding-detail{font-size:11px;color:var(--gray);font-family:'JetBrains Mono',monospace;margin-top:2px;}
-.holding-ret{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;text-align:right;}
-.confirm-btn{width:100%;margin-top:16px;padding:12px;background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.3);border-radius:10px;color:var(--green);font-weight:700;font-size:13px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;transition:all 0.2s;}
-.confirm-btn:hover{background:rgba(0,255,136,0.2);}
-
-/* 成功 */
-.success-card{display:none;text-align:center;padding:40px 24px;background:var(--card);border:1px solid rgba(0,255,136,0.2);border-radius:20px;animation:fadeUp 0.4s ease;}
-.success-icon{width:64px;height:64px;border-radius:50%;background:rgba(0,255,136,0.1);border:2px solid rgba(0,255,136,0.3);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 16px;color:var(--green);font-family:'Orbitron',sans-serif;font-weight:900;}
-.success-title{font-family:'Orbitron',sans-serif;font-size:16px;color:var(--green);margin-bottom:8px;}
-.success-desc{font-size:12px;color:var(--gray);line-height:1.8;}
-
-/* 手動輸入 */
-.divider{display:flex;align-items:center;gap:12px;margin:20px 0;}
-.divider-line{flex:1;height:1px;background:var(--border);}
-.divider-text{font-size:11px;color:var(--gray);font-family:'JetBrains Mono',monospace;white-space:nowrap;}
-.manual-btn{width:100%;padding:11px;background:rgba(245,166,35,0.1);border:1px solid rgba(245,166,35,0.3);border-radius:10px;color:var(--gold);font-weight:700;font-size:12px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;transition:all 0.2s;}
-.manual-btn:hover{background:rgba(245,166,35,0.2);}
-
-.error-msg{display:none;padding:10px 14px;background:rgba(255,51,102,0.08);border:1px solid rgba(255,51,102,0.25);border-radius:8px;font-size:12px;color:#C85070;margin-top:12px;text-align:center;}
-.footer-note{text-align:center;font-size:10px;color:var(--gray);font-family:'JetBrains Mono',monospace;padding-top:8px;}
+body{
+  background:var(--bg);color:var(--white);
+  font-family:-apple-system,"PingFang TC","Noto Sans TC",sans-serif;
+  min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;
+}
+.box{
+  text-align:center;
+  background:var(--card);
+  border:1px solid rgba(0,212,255,0.12);
+  border-radius:16px;
+  padding:32px 24px;
+  max-width:380px;
+  width:100%;
+}
+.title{
+  font-size:20px;
+  font-weight:900;
+  color:var(--gold);
+  letter-spacing:3px;
+  margin-bottom:8px;
+}
+.sub{
+  font-size:11px;
+  color:var(--gray);
+  letter-spacing:2px;
+  margin-bottom:24px;
+}
+.spinner{
+  width:36px;height:36px;
+  border:3px solid rgba(0,212,255,0.2);
+  border-top-color:var(--cyan);
+  border-radius:50%;
+  animation:spin 0.8s linear infinite;
+  margin:0 auto 18px;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.msg{
+  font-size:13px;
+  color:var(--white);
+  line-height:1.7;
+  margin-bottom:14px;
+}
+.fallback-link{
+  display:inline-block;
+  margin-top:14px;
+  padding:9px 18px;
+  background:rgba(0,212,255,0.1);
+  border:1px solid rgba(0,212,255,0.3);
+  border-radius:8px;
+  color:var(--cyan);
+  text-decoration:none;
+  font-size:12px;
+  font-weight:700;
+}
+.fallback-link:hover{background:rgba(0,212,255,0.2);}
+.tip{
+  font-size:10px;
+  color:var(--gray);
+  margin-top:18px;
+  letter-spacing:1px;
+}
 </style>
 </head>
 <body>
-<div class="container">
+<div class="box">
+  <div class="title">美股神器</div>
+  <div class="sub">STOCK SYSTEM v5.0</div>
 
-  <div class="logo">
-    <div class="logo-title">美股神器</div>
-    <div class="logo-sub">STOCK SYSTEM  v5.0</div>
+  <div class="spinner"></div>
+
+  <div class="msg">
+    重新導向到上傳頁...<br>
+    若 3 秒內未自動跳轉,請點下方按鈕
   </div>
 
-  <div class="main-card" id="uploadCard">
-    <div class="card-title">設定你的持倉</div>
-    <div class="card-desc">上傳券商 App 的庫存截圖，AI 自動識別你的持股。每天早上 8:30 推播個人化分析。</div>
+  <a href="#" id="manualLink" class="fallback-link">手動進入上傳頁</a>
 
-    <div class="upload-zone" id="uploadZone">
-      <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)">
-      <div class="upload-icon">+</div>
-      <div class="upload-title">點擊或拖拉截圖到這裡</div>
-      <div class="upload-hint">支援 JPG / PNG / WEBP</div>
-    </div>
-
-    <div class="preview-box" id="previewBox">
-      <img id="previewImg" src="" alt="">
-      <button class="preview-remove" onclick="removeImage()">x</button>
-    </div>
-
-    <div class="input-group">
-      <label class="input-label">你的 LINE User ID</label>
-      <input class="user-input" id="userIdInput" placeholder="U657f8f3...">
-    </div>
-
-    <button class="submit-btn" id="submitBtn" onclick="submitImage()">開始識別持倉</button>
-
-    <div class="progress" id="progress">
-      <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-      <div class="progress-text" id="progressText">AI 識別中...</div>
-    </div>
-
-    <div class="error-msg" id="errorMsg"></div>
-
-    <div class="divider">
-      <div class="divider-line"></div>
-      <div class="divider-text">或是手動輸入</div>
-      <div class="divider-line"></div>
-    </div>
-
-    <input class="user-input" id="manualInput" placeholder="ORCL, SMR, 0050（用逗號分開）" style="margin-bottom:10px">
-    <button class="manual-btn" onclick="submitManual()">手動設定股票代號</button>
-  </div>
-
-  <div class="result-card" id="resultCard">
-    <div class="result-title">識別結果</div>
-    <div id="holdingsList"></div>
-    <button class="confirm-btn" onclick="confirmHoldings()">確認並儲存</button>
-  </div>
-
-  <div class="success-card" id="successCard">
-    <div class="success-icon">OK</div>
-    <div class="success-title">設定完成！</div>
-    <div class="success-desc">持倉已成功設定<br>每天早上 8:30<br>會推播個人化分析給你</div>
-  </div>
-
-  <div class="footer-note">美股神器  |  上班族的專屬股票分析系統</div>
+  <div class="tip">建議從 LINE「上傳」按鈕進入以保留 User ID</div>
 </div>
 
-<!-- 隱藏的 form，用來繞過 GAS 302 問題 -->
-<form id="hiddenForm" target="hiddenFrame" method="POST" style="display:none">
-  <input type="hidden" name="action" id="formAction">
-  <input type="hidden" name="userId" id="formUserId">
-  <input type="hidden" name="holdings" id="formHoldings">
-</form>
-<iframe name="hiddenFrame" style="display:none"></iframe>
-
 <script>
-// GAS 部署網址
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzjaRxJhYkqNIaJaFxvSiy0L120H0m0k7NY_Vc6IXIw70kO2SIvf3fOf26TnhApTgrg/exec';
+// GAS 原生上傳頁(09_api.gs getUploadPageHTML)
+// 視覺與功能完整,真實接通 Vision API,無任何寫死資料
+const GAS_UPLOAD_URL = 'https://script.google.com/macros/s/AKfycbzjaRxJhYkqNIaJaFxvSiy0L120H0m0k7NY_Vc6IXIw70kO2SIvf3fOf26TnhApTgrg/exec';
 
-let selectedFile = null;
-let recognizedHoldings = [];
-
-// 從URL取得參數
-function getUrlParam(key) {
-  return new URLSearchParams(window.location.search).get(key) || '';
+// 從 query string 拿 user id 並帶過去
+function getUid() {
+  return new URLSearchParams(window.location.search).get('id') || '';
 }
 
-window.onload = function() {
-  const uid = getUrlParam('id');
-  if (uid) document.getElementById('userIdInput').value = uid;
+const uid = getUid();
+const target = uid ? (GAS_UPLOAD_URL + '?id=' + encodeURIComponent(uid)) : GAS_UPLOAD_URL;
 
-  const zone = document.getElementById('uploadZone');
-  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
-  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
-  zone.addEventListener('drop', e => {
-    e.preventDefault();
-    zone.classList.remove('dragover');
-    if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
-  });
-};
+document.getElementById('manualLink').href = target;
 
-function handleFile(e) {
-  if (e.target.files[0]) processFile(e.target.files[0]);
-}
-
-function processFile(file) {
-  if (!file.type.startsWith('image/')) { showError('請上傳圖片檔案'); return; }
-  selectedFile = file;
-  const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById('previewImg').src = e.target.result;
-    document.getElementById('previewBox').style.display = 'block';
-    document.getElementById('uploadZone').style.display = 'none';
-  };
-  reader.readAsDataURL(file);
-}
-
-function removeImage() {
-  selectedFile = null;
-  document.getElementById('previewBox').style.display = 'none';
-  document.getElementById('uploadZone').style.display = 'block';
-  document.getElementById('fileInput').value = '';
-}
-
-function showError(msg) {
-  const el = document.getElementById('errorMsg');
-  el.textContent = msg;
-  el.style.display = 'block';
-  setTimeout(() => el.style.display = 'none', 4000);
-}
-
-function setProgress(pct, text) {
-  document.getElementById('progressFill').style.width = pct + '%';
-  document.getElementById('progressText').textContent = text;
-}
-
-// 用 form submit 儲存持股（繞過 302）
-function saveHoldingsViaForm(userId, holdings) {
-  const form = document.getElementById('hiddenForm');
-  form.action = GAS_URL;
-  document.getElementById('formAction').value = 'saveHoldings';
-  document.getElementById('formUserId').value = userId;
-  document.getElementById('formHoldings').value = JSON.stringify(holdings);
-  form.submit();
-}
-
-async function submitImage() {
-  const userId = document.getElementById('userIdInput').value.trim();
-  if (!userId) { showError('請填入你的 LINE User ID'); return; }
-  if (!selectedFile) { showError('請先上傳截圖'); return; }
-
-  const btn = document.getElementById('submitBtn');
-  btn.disabled = true;
-  document.getElementById('progress').style.display = 'block';
-  document.getElementById('errorMsg').style.display = 'none';
-
-  setProgress(20, 'AI 識別中，約需 15 秒...');
-
-  try {
-    const base64 = await fileToBase64(selectedFile);
-    setProgress(50, 'Claude Vision 分析截圖...');
-
-    // 呼叫 Claude Vision API（透過 GAS）
-    const formData = new FormData();
-    formData.append('action', 'vision');
-    formData.append('userId', userId);
-    formData.append('image', base64);
-    formData.append('mimeType', selectedFile.type);
-
-    const res = await fetch(GAS_URL, { method: 'POST', body: formData });
-    const data = await res.json();
-
-    setProgress(90, '整理識別結果...');
-
-    if (data.success && data.holdings && data.holdings.length > 0) {
-      recognizedHoldings = data.holdings;
-      setProgress(100, '識別完成！');
-      setTimeout(() => showResults(data.holdings), 500);
-    } else {
-      throw new Error(data.error || '識別失敗');
-    }
-
-  } catch(err) {
-    // API 失敗時顯示模擬結果讓用戶確認
-    setProgress(100, '識別完成（示範模式）');
-    const demo = [
-      { ticker:'ORCX', shares:333, avgPrice:40.675, market:'US', returnPct:-11.9 },
-      { ticker:'SMUP', shares:1072, avgPrice:31.128, market:'US', returnPct:-59.0 }
-    ];
-    recognizedHoldings = demo;
-    setTimeout(() => showResults(demo), 500);
-  }
-}
-
-function fileToBase64(file) {
-  return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result.split(',')[1]);
-    r.onerror = () => rej(new Error('讀取失敗'));
-    r.readAsDataURL(file);
-  });
-}
-
-function showResults(holdings) {
-  document.getElementById('progress').style.display = 'none';
-  document.getElementById('uploadCard').style.display = 'none';
-
-  const list = document.getElementById('holdingsList');
-  list.innerHTML = '';
-  holdings.forEach(h => {
-    const cur = h.market === 'TW' ? 'NT$' : '$';
-    const retColor = (h.returnPct || 0) >= 0 ? 'var(--green)' : 'var(--red)';
-    const div = document.createElement('div');
-    div.className = 'holding-item';
-    div.innerHTML = `
-      <div>
-        <div class="holding-ticker">${h.ticker}</div>
-        <div class="holding-detail">${h.shares}股  均價${cur}${h.avgPrice}</div>
-      </div>
-      <div class="holding-ret" style="color:${retColor}">
-        ${(h.returnPct||0) >= 0 ? '+' : ''}${(h.returnPct||0).toFixed(1)}%
-      </div>`;
-    list.appendChild(div);
-  });
-
-  document.getElementById('resultCard').style.display = 'block';
-}
-
-function confirmHoldings() {
-  const userId = document.getElementById('userIdInput').value.trim();
-  saveHoldingsViaForm(userId, recognizedHoldings);
-  document.getElementById('resultCard').style.display = 'none';
-  document.getElementById('successCard').style.display = 'block';
-}
-
-function submitManual() {
-  const userId = document.getElementById('userIdInput').value.trim();
-  const input  = document.getElementById('manualInput').value.trim();
-  if (!userId) { showError('請填入你的 LINE User ID'); return; }
-  if (!input)  { showError('請輸入股票代號'); return; }
-
-  const tickers = input.toUpperCase().replace(/[，、\s]+/g, ',').split(',').filter(t => t.length >= 2);
-  const holdings = tickers.map(t => ({
-    ticker: t, shares: 0, avgPrice: 0,
-    market: /^\d/.test(t) ? 'TW' : 'US'
-  }));
-
-  saveHoldingsViaForm(userId, holdings);
-  document.getElementById('uploadCard').style.display = 'none';
-  document.getElementById('successCard').style.display = 'block';
-}
+// 自動跳轉(0.8 秒讓使用者看到品牌畫面)
+setTimeout(() => {
+  window.location.replace(target);
+}, 800);
 </script>
+
+<!-- noscript fallback -->
+<noscript>
+  <meta http-equiv="refresh" content="0;url=https://script.google.com/macros/s/AKfycbzjaRxJhYkqNIaJaFxvSiy0L120H0m0k7NY_Vc6IXIw70kO2SIvf3fOf26TnhApTgrg/exec">
+  <p style="text-align:center;padding:20px;">
+    請啟用 JavaScript,或<a href="https://script.google.com/macros/s/AKfycbzjaRxJhYkqNIaJaFxvSiy0L120H0m0k7NY_Vc6IXIw70kO2SIvf3fOf26TnhApTgrg/exec" style="color:#00D4FF;">點此手動進入</a>
+  </p>
+</noscript>
 </body>
 </html>
