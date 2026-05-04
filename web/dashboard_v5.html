@@ -245,15 +245,15 @@ body::before{content:'';position:fixed;inset:0;background:
       </div>
 
       <!-- 大盤情緒 -->
-      <div class="panel-card">
+      <div class="panel-card" id="sentimentCard">
         <div class="section-title" style="font-size:11px">▌ 大盤情緒</div>
         <div id="sentimentArea" class="panel-empty">
           載入中 ...
         </div>
       </div>
 
-      <!-- 大叔最新觀點 (從 09_api.gs 讀,沒有就顯示空狀態) -->
-      <div class="panel-card">
+      <!-- 大叔最新觀點 (從 09_api.gs 讀,沒有就整張卡隱藏) -->
+      <div class="panel-card" id="uncleCard">
         <div class="section-title" style="font-size:11px">▌ 大叔最新觀點</div>
         <div id="uncleArea" class="panel-empty">
           載入中 ...
@@ -388,7 +388,8 @@ function hideError() {
 
 // ═════ render 主入口 ═════
 function renderAll(data) {
-  renderUsage(data.usage);
+  // v3.3 09_api.gs 沒回 usage.plan / usage.holdingCount,前端自己推
+  renderUsage(data.usage, data.holdings);
   renderMarket(data.market);
   renderFx(data.fx);
   renderMarketTime(data.marketTW, data.marketUS, data.isDST);
@@ -400,7 +401,9 @@ function renderAll(data) {
 }
 
 // ═════ Usage ═════
-function renderUsage(usage) {
+// 09_api.gs v3.3 回傳格式:{ used, limit, remaining, isUnlimited }
+// 沒有 plan / holdingCount / holdingLimit → 前端自己推
+function renderUsage(usage, holdings) {
   const badge = document.getElementById('usageBadge');
   const planEl = document.getElementById('planLabel');
   const remainEl = document.getElementById('usageRemaining');
@@ -411,44 +414,47 @@ function renderUsage(usage) {
     return;
   }
 
-  // 方案
-  const plan = (usage.plan || '').toLowerCase();
-  if (plan === 'admin') {
+  // 從 isUnlimited 反推 plan
+  // isUnlimited = true → admin / 否則 → vip(其他方案被 guardActiveUser_ 擋掉了所以走不到這)
+  const isAdmin = usage.isUnlimited === true;
+  const plan = isAdmin ? 'admin' : 'vip';
+
+  if (isAdmin) {
     badge.textContent = '👑 ADMIN ∞';
     badge.className = 'usage-badge admin';
     planEl.textContent = 'ADMIN';
     planEl.style.color = 'var(--purple)';
     remainEl.textContent = '∞';
     remainEl.style.color = 'var(--purple)';
-  } else if (plan === 'vip') {
+  } else {
     const remaining = usage.remaining != null ? usage.remaining : '--';
     const limit = usage.limit != null ? usage.limit : 20;
     badge.textContent = `今日剩餘 ${remaining} / ${limit}`;
     let cls = 'usage-badge';
     if (remaining === 0) cls += ' zero';
-    else if (remaining / limit <= 0.2) cls += ' low';
+    else if (limit > 0 && remaining / limit <= 0.2) cls += ' low';
     badge.className = cls;
     planEl.textContent = 'VIP';
     planEl.style.color = 'var(--gold)';
     remainEl.textContent = `${remaining} / ${limit}`;
-    remainEl.style.color = remaining === 0 ? 'var(--red)' : (remaining / limit <= 0.2 ? 'var(--orange)' : 'var(--cyan)');
-  } else {
-    badge.textContent = '訪客';
-    badge.className = 'usage-badge';
-    planEl.textContent = (usage.plan || '--').toUpperCase();
-    remainEl.textContent = '--';
+    remainEl.style.color = remaining === 0
+      ? 'var(--red)'
+      : (limit > 0 && remaining / limit <= 0.2 ? 'var(--orange)' : 'var(--cyan)');
   }
 
-  // 持股數
-  if (usage.holdingCount != null) {
-    const limit = usage.holdingLimit;
-    if (plan === 'admin' || limit == null) {
-      countEl.textContent = `${usage.holdingCount} / ∞`;
+  // 持股數:用 holdings.length 自己算(09_api.gs 沒回 holdingCount)
+  // holdingLimit:admin = ∞,vip = 15(對齊 02_users.gs PLAN_LIMITS)
+  const holdingCount = (holdings && Array.isArray(holdings)) ? holdings.length : 0;
+  const holdingLimit = isAdmin ? null : 15;
+
+  if (holdingLimit == null) {
+    countEl.textContent = `${holdingCount} / ∞`;
+  } else {
+    countEl.textContent = `${holdingCount} / ${holdingLimit}`;
+    if (holdingCount >= holdingLimit * 0.9) {
+      countEl.style.color = 'var(--orange)';
     } else {
-      countEl.textContent = `${usage.holdingCount} / ${limit}`;
-      if (usage.holdingCount >= limit * 0.9) {
-        countEl.style.color = 'var(--orange)';
-      }
+      countEl.style.color = '';
     }
   }
 }
@@ -485,29 +491,78 @@ function renderMarket(market) {
 }
 
 // ═════ 匯率 ═════
+// 09_api.gs v3.3 直接回數字(從 getUsdTwdSafe 來的),不是物件
+// 但前端容錯支援兩種格式
 function renderFx(fx) {
   const el = document.getElementById('usdTwd');
   const srcEl = document.getElementById('usdTwdSrc');
-  if (fx && fx.usdTwd) {
-    el.textContent = fx.usdTwd.toFixed(2);
-    if (fx.source) srcEl.textContent = fx.source;
+
+  let rate = null;
+  let source = null;
+
+  if (typeof fx === 'number') {
+    rate = fx;
+  } else if (fx && typeof fx === 'object') {
+    if (typeof fx.usdTwd === 'number') {
+      rate = fx.usdTwd;
+      source = fx.source;
+    } else if (typeof fx.rate === 'number') {
+      rate = fx.rate;
+      source = fx.source;
+    }
+  }
+
+  if (rate != null && rate > 0) {
+    el.textContent = rate.toFixed(2);
+    if (source) srcEl.textContent = source;
+    else srcEl.textContent = '即時匯率';
   } else {
     el.textContent = '--';
+    srcEl.textContent = '匯率載入失敗';
   }
 }
 
 // ═════ 市場時間 ═════
+// 09_api.gs v3.3 直接回字串("OPEN"/"PRE"/"POST"/"CLOSED"/"HOLIDAY"),不是物件
+// 但前端容錯支援兩種格式
 function renderMarketTime(marketTW, marketUS, isDST) {
-  // 優先顯示 US (主要服務)
-  if (marketUS) {
+  // 把字串/物件正規化成 {status, statusZh, note}
+  function normalize(m) {
+    if (!m) return null;
+    if (typeof m === 'string') {
+      return { status: m, statusZh: zhStatus(m), note: '' };
+    }
+    if (typeof m === 'object') {
+      const status = m.status || '';
+      return {
+        status: status,
+        statusZh: m.statusZh || zhStatus(status),
+        note: m.note || ''
+      };
+    }
+    return null;
+  }
+
+  function zhStatus(s) {
+    const u = String(s || '').toUpperCase();
+    if (u === 'OPEN' || u === 'REGULAR') return '🟢 盤中';
+    if (u === 'PRE') return '🟡 盤前';
+    if (u === 'POST' || u === 'AFTER') return '🟠 盤後';
+    if (u === 'CLOSED') return '🔴 收盤';
+    if (u === 'HOLIDAY') return '🎌 休市';
+    return '-- ' + (s || '');
+  }
+
+  const us = normalize(marketUS);
+  if (us) {
     document.getElementById('marketTimeLabel').textContent = `美股市場 ${isDST ? '(夏令)' : '(冬令)'}`;
-    document.getElementById('marketTime').textContent = marketUS.statusZh || marketUS.status || '--';
-    document.getElementById('marketTimeSub').textContent = marketUS.note || '';
-    // 顏色
-    const status = (marketUS.status || '').toLowerCase();
+    document.getElementById('marketTime').textContent = us.statusZh;
+    document.getElementById('marketTimeSub').textContent = us.note || (isDST ? '21:30~04:00' : '22:30~05:00');
+
+    const status = (us.status || '').toUpperCase();
     const el = document.getElementById('marketTime');
-    if (status.includes('open') || status.includes('regular')) el.style.color = 'var(--green)';
-    else if (status.includes('pre') || status.includes('after')) el.style.color = 'var(--orange)';
+    if (status === 'OPEN' || status === 'REGULAR') el.style.color = 'var(--green)';
+    else if (status === 'PRE' || status === 'POST' || status === 'AFTER') el.style.color = 'var(--orange)';
     else el.style.color = 'var(--gray)';
   }
 }
@@ -539,8 +594,9 @@ function renderHoldings(holdings, fx) {
     card.style.animationDelay = (idx * 0.1) + 's';
 
     // 計算
+    // 09_api.gs v3.3 的欄位是 pct(不是 dayPct),前端兩種都吃以防未來改名
     const price = h.currentPrice != null ? h.currentPrice : h.avgPrice;
-    const pct = h.dayPct != null ? h.dayPct : 0;
+    const pct = (h.pct != null) ? h.pct : (h.dayPct != null ? h.dayPct : 0);
     const shares = h.shares || 0;
     const cost = h.avgPrice || 0;
     const ur = (price - cost) * shares;
@@ -631,12 +687,16 @@ function getAdvice(ret, pct) {
 }
 
 // ═════ 大盤情緒 ═════
+// 09_api.gs v3.3 還沒提供 sentiment 欄位,沒有就整張卡隱藏
 function renderSentiment(sentiment) {
+  const card = document.getElementById('sentimentCard');
   const area = document.getElementById('sentimentArea');
-  if (!sentiment) {
-    area.innerHTML = '<div class="panel-empty">資料尚未提供</div>';
+
+  if (!sentiment || (sentiment.dix == null && sentiment.fearGreed == null && !sentiment.note)) {
+    if (card) card.style.display = 'none';
     return;
   }
+  if (card) card.style.display = '';
 
   let html = '<div style="display:flex;flex-direction:column;gap:10px;font-size:12px;">';
 
@@ -663,32 +723,31 @@ function renderSentiment(sentiment) {
   }
 
   if (sentiment.note) {
-    html += `<div style="font-size:11px;color:var(--lgray);line-height:1.6;margin-top:6px;">${sentiment.note}</div>`;
+    html += `<div style="font-size:11px;color:var(--lgray);line-height:1.6;margin-top:6px;">${escapeHtml(sentiment.note)}</div>`;
   }
 
   html += '</div>';
-
-  if (html === '<div style="display:flex;flex-direction:column;gap:10px;font-size:12px;"></div>') {
-    area.innerHTML = '<div class="panel-empty">資料尚未提供</div>';
-  } else {
-    area.innerHTML = html;
-  }
+  area.innerHTML = html;
 }
 
 // ═════ 大叔最新 ═════
+// 09_api.gs v3.3 還沒提供 uncle 欄位,沒有就整張卡隱藏
 function renderUncle(uncle) {
+  const card = document.getElementById('uncleCard');
   const area = document.getElementById('uncleArea');
-  if (!uncle || (!uncle.title && !uncle.points)) {
-    area.innerHTML = '<div class="panel-empty">大叔暫無新文章</div>';
+
+  if (!uncle || (!uncle.title && !uncle.summary && (!uncle.points || uncle.points.length === 0))) {
+    if (card) card.style.display = 'none';
     return;
   }
+  if (card) card.style.display = '';
 
   let html = '<div style="padding:12px;background:rgba(245,166,35,0.05);border:1px solid rgba(245,166,35,0.2);border-radius:10px;">';
   if (uncle.title) {
-    html += `<div style="font-size:12px;color:var(--gold);margin-bottom:8px;font-weight:700;line-height:1.4;">📰 ${uncle.title}</div>`;
+    html += `<div style="font-size:12px;color:var(--gold);margin-bottom:8px;font-weight:700;line-height:1.4;">📰 ${escapeHtml(uncle.title)}</div>`;
   }
   if (uncle.publishedAt) {
-    html += `<div style="font-size:10px;color:var(--gray);font-family:'JetBrains Mono',monospace;margin-bottom:8px;">${uncle.publishedAt}</div>`;
+    html += `<div style="font-size:10px;color:var(--gray);font-family:'JetBrains Mono',monospace;margin-bottom:8px;">${escapeHtml(uncle.publishedAt)}</div>`;
   }
   if (uncle.points && Array.isArray(uncle.points) && uncle.points.length > 0) {
     html += '<div style="font-size:11px;color:var(--white);line-height:1.7;opacity:0.85;">';
@@ -719,7 +778,8 @@ function renderAlerts(holdings) {
 
   let html = '';
   holdings.forEach(h => {
-    const pct = h.dayPct != null ? h.dayPct : 0;
+    // 09_api.gs v3.3 用 pct,容錯支援 dayPct
+    const pct = (h.pct != null) ? h.pct : (h.dayPct != null ? h.dayPct : 0);
     if (Math.abs(pct) >= 5) {
       const cls = pct > 0 ? 'alert-green' : 'alert-red';
       html += `
@@ -752,13 +812,24 @@ function renderSummary(holdings, fx) {
     return;
   }
 
+  // 取匯率(支援 fx 是數字 / 物件 / null)
+  function getUsdRate(fx) {
+    if (typeof fx === 'number' && fx > 0) return fx;
+    if (fx && typeof fx === 'object') {
+      if (typeof fx.usdTwd === 'number' && fx.usdTwd > 0) return fx.usdTwd;
+      if (typeof fx.rate === 'number' && fx.rate > 0) return fx.rate;
+    }
+    return 32;  // fallback
+  }
+
   let totalCost = 0, totalValue = 0;
+  const usdRate = getUsdRate(fx);
+
   holdings.forEach(h => {
     const price = h.currentPrice != null ? h.currentPrice : h.avgPrice;
     const cost = h.avgPrice || 0;
     const shares = h.shares || 0;
     // 統一以 USD 計算 (台股要先除匯率)
-    const usdRate = fx && fx.usdTwd ? fx.usdTwd : 32;
     if ((h.market || 'US').toUpperCase() === 'TW') {
       totalCost += (cost * shares) / usdRate;
       totalValue += (price * shares) / usdRate;
@@ -770,7 +841,6 @@ function renderSummary(holdings, fx) {
 
   const totalUR = totalValue - totalCost;
   const retPct = totalCost > 0 ? (totalUR / totalCost * 100) : 0;
-  const usdRate = fx && fx.usdTwd ? fx.usdTwd : 32;
 
   totalCostEl.textContent = `$${totalCost.toFixed(0)}`;
   totalCostTwEl.textContent = `≈ 台幣 ${(totalCost * usdRate / 10000).toFixed(0)} 萬`;
