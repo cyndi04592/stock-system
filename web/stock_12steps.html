@@ -1,1102 +1,677 @@
 <!DOCTYPE html>
-<!--
-═══════════════════════════════════════════════════════════
-  美股神器 - 個股分析頁  v7.0.1
-  
-  v7.0.1 (2026/05/05 第四十二輪 patch):
-   - 加測試開關 ?test=guest/expired/limit/tw_off(純前端模擬,不打 API)
-   - 讓 admin 不用找過期 VIP 帳號就能看完所有錯誤畫面
-   - 測試模式右上角會顯示明顯紅色 TEST 標記
-  
-  v7.0 (2026/05/05 第四十二輪):
-   - 砍 17 式 STOCK_MAPS 寫死資料(嚴重技術債)
-   - 砍 simulate() + Math.random
-   - 砍 TACO 川普指標橫幅(後端無資料源,寫死數字)
-   - 砍 5 個期間選單(後端無期間概念,點了只改 UI)
-   - 砍市場下拉(後端 isTwTicker_ 自動判定)
-   - 砍 NVDA/ORCL 預設值,改 placeholder
-   - 改成 6 式股神分析,完全對齊 LINE Flex
-   - 接通 09_api.gs v3.4 ?action=analyze JSONP
-   - 處理 usage(剩餘次數)、admin 不限制、API 失敗顯示真實錯誤
-   - 處理 NOT_ACTIVE / DAILY_LIMIT_EXCEEDED 等 v3.2 守門員回應
-   - QUICK 8 個全部對齊真實後端可分析的代號
-═══════════════════════════════════════════════════════════
--->
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>美股神器 - 個股分析</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<title>美股神器 · AI 分析</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#020A14;
-  --card:#071525;
-  --card2:#0A1E35;
-  --gold:#F5A623;
-  --cyan:#00D4FF;
-  --green:#00FF88;
-  --red:#FF3366;
-  --orange:#FF6B35;
-  --purple:#A855F7;
+:root {
+  --bg:#020A14;--card:#071525;--card2:#0A1E35;
+  --gold:#F5A623;--cyan:#00D4FF;--green:#00FF88;
+  --red:#FF3366;--orange:#FF6B35;--purple:#A855F7;
   --teal:#00CDB7;
-  --white:#E8F4FD;
-  --gray:#4A6580;
-  --lgray:#8BA8C4;
+  --white:#E8F4FD;--gray:#4A6580;--lgray:#8BA8C4;
   --border:rgba(0,212,255,0.12);
-  --border2:rgba(0,212,255,0.25);
 }
-*{margin:0;padding:0;box-sizing:border-box;}
-body{
-  background:var(--bg);
-  color:var(--white);
-  font-family:'Noto Sans TC',sans-serif;
-  min-height:100vh;
-  position:relative;
-}
-body::before{
-  content:'';
-  position:fixed;
-  inset:0;
-  background:radial-gradient(ellipse at 50% 0%,rgba(0,212,255,0.05) 0%,transparent 60%);
-  pointer-events:none;
-  z-index:0;
-}
-.page{max-width:1140px;margin:0 auto;padding:20px;position:relative;z-index:1;}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--white); font-family:'Noto Sans TC',sans-serif; min-height:100vh; }
+.page { max-width:1140px; margin:0 auto; padding:20px; }
 
-/* ─── Top Bar ─── */
-.top-bar{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:16px 0 20px;
-  border-bottom:1px solid var(--border);
-  margin-bottom:24px;
-  flex-wrap:wrap;
-  gap:12px;
-}
-.logo{font-family:'Orbitron',sans-serif;font-size:17px;font-weight:900;color:var(--gold);letter-spacing:3px;}
-.logo span{color:var(--cyan);}
-.top-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
-.usage-pill{
-  font-family:'JetBrains Mono',monospace;
-  font-size:10px;
-  padding:5px 12px;
-  border-radius:14px;
-  background:rgba(245,166,35,0.08);
-  border:1px solid rgba(245,166,35,0.25);
-  color:var(--gold);
-  letter-spacing:1px;
-}
-.usage-pill.unlimited{
-  background:rgba(0,255,136,0.08);
-  border-color:rgba(0,255,136,0.3);
-  color:var(--green);
-}
-.usage-pill.danger{
-  background:rgba(255,51,102,0.08);
-  border-color:rgba(255,51,102,0.3);
-  color:var(--red);
-}
-.test-badge{
-  font-family:'Orbitron',sans-serif;
-  font-size:10px;font-weight:900;
-  padding:5px 12px;border-radius:14px;
-  background:rgba(255,51,102,0.15);
-  border:1px solid rgba(255,51,102,0.5);
-  color:var(--red);
-  letter-spacing:2px;
-  animation:pulse 1.5s infinite;
-}
-@keyframes pulse{
-  0%,100%{opacity:1;}
-  50%{opacity:0.6;}
-}
-.clock{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gray);}
+.top-bar { display:flex; align-items:center; justify-content:space-between; padding:16px 0 20px; border-bottom:1px solid var(--border); margin-bottom:24px; }
+.logo { font-family:'Orbitron',sans-serif; font-size:17px; font-weight:900; color:var(--gold); letter-spacing:2px; }
+.logo span { color:var(--cyan); }
+.clock { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--gray); }
+.usage-tag { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--cyan); padding:4px 10px; border:1px solid var(--border); border-radius:6px; }
 
-/* ─── 輸入區 ─── */
-.input-section{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:16px;
-  padding:20px 24px;
-  margin-bottom:20px;
-}
-.input-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;}
-.input-group{display:flex;flex-direction:column;gap:6px;flex:1;min-width:240px;}
-.input-label{
-  font-size:10px;color:var(--gray);
-  font-family:'JetBrains Mono',monospace;
-  letter-spacing:1px;text-transform:uppercase;
-}
-.stock-input{
-  background:rgba(0,0,0,0.4);
-  border:1px solid var(--border);
-  border-radius:8px;
-  padding:11px 14px;
-  color:var(--white);
-  font-family:'JetBrains Mono',monospace;
-  font-size:15px;
-  font-weight:700;
-  letter-spacing:2px;
-  width:100%;
-  transition:border-color 0.2s;
-}
-.stock-input:focus{outline:none;border-color:var(--cyan);}
-.stock-input::placeholder{color:var(--gray);font-weight:400;letter-spacing:0.5px;font-size:12px;}
+.input-section { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px 24px; margin-bottom:16px; }
+.input-row { display:flex; gap:14px; align-items:flex-end; flex-wrap:wrap; }
+.input-group { display:flex; flex-direction:column; gap:6px; }
+.input-label { font-size:10px; color:var(--gray); font-family:'JetBrains Mono',monospace; letter-spacing:1px; text-transform:uppercase; }
+.stock-input { background:rgba(0,0,0,0.4); border:1px solid var(--border); border-radius:8px; padding:10px 14px; color:var(--white); font-family:'JetBrains Mono',monospace; font-size:15px; font-weight:700; width:155px; letter-spacing:2px; transition:border-color 0.2s; }
+.stock-input:focus { outline:none; border-color:var(--cyan); }
+.market-select { background:rgba(0,0,0,0.4); border:1px solid var(--border); border-radius:8px; padding:10px 12px; color:var(--white); font-family:'JetBrains Mono',monospace; font-size:12px; cursor:pointer; }
+.market-select:focus { outline:none; border-color:var(--cyan); }
+.analyze-btn { padding:10px 24px; background:var(--cyan); border:none; border-radius:8px; color:#020A14; font-weight:900; font-size:13px; cursor:pointer; transition:all 0.2s; font-family:'Orbitron',sans-serif; letter-spacing:1px; white-space:nowrap; }
+.analyze-btn:hover { opacity:0.85; transform:translateY(-1px); }
+.analyze-btn:disabled { opacity:0.3; cursor:not-allowed; transform:none; }
 
-.analyze-btn{
-  padding:11px 28px;
-  background:var(--cyan);
-  border:none;border-radius:8px;
-  color:#020A14;font-weight:900;font-size:13px;
-  cursor:pointer;transition:all 0.2s;
-  font-family:'Orbitron',sans-serif;
-  letter-spacing:1px;white-space:nowrap;
-}
-.analyze-btn:hover{opacity:0.85;transform:translateY(-1px);}
-.analyze-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+.quick-row { display:flex; gap:7px; flex-wrap:wrap; margin-top:14px; align-items:center; }
+.quick-label { font-size:10px; color:var(--gray); font-family:'JetBrains Mono',monospace; letter-spacing:1px; }
+.quick-tag { padding:4px 11px; border-radius:20px; border:1px solid var(--border); background:transparent; color:var(--lgray); font-size:10px; cursor:pointer; transition:all 0.2s; font-family:'JetBrains Mono',monospace; }
+.quick-tag:hover { color:var(--white); border-color:rgba(255,255,255,0.25); }
+.quick-tag.tw { border-color:rgba(245,166,35,0.3); color:#C8A060; }
+.quick-tag.tw:hover { color:var(--gold); border-color:var(--gold); }
 
-/* ─── QUICK ─── */
-.quick-row{
-  display:flex;gap:7px;flex-wrap:wrap;
-  margin-top:14px;align-items:center;
-}
-.quick-label{
-  font-size:10px;color:var(--gray);
-  font-family:'JetBrains Mono',monospace;
-  letter-spacing:1px;
-}
-.quick-tag{
-  padding:5px 12px;border-radius:20px;
-  border:1px solid var(--border);
-  background:transparent;color:var(--lgray);
-  font-size:10px;cursor:pointer;
-  transition:all 0.2s;
-  font-family:'JetBrains Mono',monospace;
-}
-.quick-tag:hover{color:var(--white);border-color:rgba(255,255,255,0.25);}
-.quick-tag.tw{border-color:rgba(245,166,35,0.3);color:#C8A060;}
-.quick-tag.tw:hover{color:var(--gold);border-color:var(--gold);}
+/* 結論卡 */
+.conclusion-panel { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px 24px; margin-bottom:20px; display:none; }
+.conclusion-panel.show { display:block; }
+.conclusion-layout { display:flex; gap:24px; align-items:center; flex-wrap:wrap; }
+.signal-circle { width:84px; height:84px; border-radius:50%; display:flex; flex-direction:column; align-items:center; justify-content:center; border:3px solid var(--border); flex-shrink:0; transition:border-color 0.5s; }
+.signal-emoji { font-size:32px; line-height:1; }
+.signal-info { flex:1; min-width:200px; }
+.signal-label { font-family:'Orbitron',sans-serif; font-size:18px; font-weight:900; margin-bottom:8px; letter-spacing:1px; }
+.signal-bar-outer { height:6px; background:rgba(255,255,255,0.05); border-radius:3px; margin-bottom:8px; overflow:hidden; }
+.signal-bar-inner { height:100%; border-radius:3px; transition:width 0.8s ease; }
+.signal-detail { font-size:11px; color:var(--gray); font-family:'JetBrains Mono',monospace; }
 
-/* ─── Loading ─── */
-.loading{
-  text-align:center;padding:60px 20px;display:none;
-}
-.loading.show{display:block;}
-.loading-text{
-  font-family:'Orbitron',sans-serif;
-  font-size:13px;color:var(--cyan);
-  letter-spacing:3px;
-  animation:blink 1.2s infinite;
-}
-.loading-sub{
-  font-family:'JetBrains Mono',monospace;
-  font-size:10px;color:var(--gray);
-  margin-top:10px;letter-spacing:1px;
-}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.suggestion-box { margin-top:16px; padding:14px 18px; border-radius:10px; font-size:13px; line-height:1.8; border-left:3px solid; }
+.sb-bullish { background:rgba(0,255,136,0.06); border-color:var(--green); color:#60C890; }
+.sb-bearish { background:rgba(255,51,102,0.06); border-color:var(--red); color:#C85070; }
+.sb-neutral { background:rgba(0,212,255,0.06); border-color:var(--cyan); color:#60A8C8; }
+.sb-insufficient { background:rgba(74,101,128,0.1); border-color:var(--gray); color:var(--lgray); }
+.sb-title { font-weight:700; margin-bottom:6px; font-family:'JetBrains Mono',monospace; letter-spacing:1px; font-size:11px; }
+.alert-line { margin-top:8px; padding:8px 12px; background:rgba(255,107,53,0.1); border-left:3px solid var(--orange); color:#C87040; font-size:12px; border-radius:4px; }
 
-/* ─── 錯誤訊息 ─── */
-.error-box{
-  display:none;
-  padding:18px 22px;
-  background:rgba(255,51,102,0.06);
-  border:1px solid rgba(255,51,102,0.3);
-  border-radius:12px;
-  margin-bottom:20px;
-}
-.error-box.show{display:block;animation:fadeUp 0.3s ease;}
-.error-title{
-  font-family:'Orbitron',sans-serif;
-  font-size:11px;color:var(--red);
-  letter-spacing:2px;margin-bottom:8px;
-}
-.error-msg{
-  font-size:13px;color:#C85070;
-  line-height:1.7;
-}
-.error-hint{
-  font-size:11px;color:var(--gray);
-  margin-top:8px;
-  font-family:'JetBrains Mono',monospace;
-}
+.holding-meta { display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
+.meta-tag { padding:6px 12px; background:rgba(0,0,0,0.3); border:1px solid var(--border); border-radius:6px; font-size:11px; font-family:'JetBrains Mono',monospace; color:var(--lgray); }
+.meta-tag.locked { border-color:var(--gold); color:var(--gold); }
+.meta-tag.leveraged { border-color:var(--orange); color:var(--orange); }
 
-/* ─── Section Title ─── */
-.section-title{
-  font-family:'Orbitron',sans-serif;
-  font-size:11px;color:var(--gold);
-  letter-spacing:3px;
-  margin-bottom:14px;
-  display:flex;align-items:center;gap:10px;
-}
-.section-title::after{
-  content:'';flex:1;height:1px;
-  background:linear-gradient(90deg,var(--border),transparent);
-}
+/* 6 式卡片 */
+.section-title { font-family:'Orbitron',sans-serif; font-size:11px; color:var(--gold); letter-spacing:3px; margin-bottom:14px; display:flex; align-items:center; gap:10px; }
+.section-title::after { content:''; flex:1; height:1px; background:linear-gradient(90deg,var(--border),transparent); }
 
-/* ─── 摘要卡 ─── */
-.summary-panel{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:16px;
-  padding:22px 26px;
-  margin-bottom:20px;
-}
-.summary-head{
-  display:flex;justify-content:space-between;
-  align-items:flex-start;gap:18px;flex-wrap:wrap;
-  margin-bottom:14px;
-}
-.summary-stock{display:flex;flex-direction:column;gap:6px;}
-.summary-ticker{
-  font-family:'Orbitron',sans-serif;
-  font-size:24px;font-weight:900;color:var(--white);
-  letter-spacing:3px;
-}
-.summary-meta{
-  font-family:'JetBrains Mono',monospace;
-  font-size:11px;color:var(--gray);
-  letter-spacing:1px;
-}
-.summary-meta .pct{font-weight:700;}
-.summary-meta .pct.up{color:var(--green);}
-.summary-meta .pct.down{color:var(--red);}
-.summary-action{
-  display:flex;flex-direction:column;
-  align-items:flex-end;gap:6px;
-}
-.action-badge{
-  font-family:'Orbitron',sans-serif;
-  font-size:14px;font-weight:900;
-  padding:8px 18px;border-radius:10px;
-  letter-spacing:2px;
-}
-.action-buy{background:rgba(0,255,136,0.12);color:var(--green);border:1px solid rgba(0,255,136,0.3);}
-.action-watch{background:rgba(0,212,255,0.1);color:var(--cyan);border:1px solid rgba(0,212,255,0.3);}
-.action-warn{background:rgba(255,107,53,0.1);color:var(--orange);border:1px solid rgba(255,107,53,0.3);}
-.action-sell{background:rgba(255,51,102,0.1);color:var(--red);border:1px solid rgba(255,51,102,0.3);}
-.action-hold{background:rgba(74,101,128,0.15);color:var(--lgray);border:1px solid rgba(74,101,128,0.3);}
-.confidence{
-  font-family:'JetBrains Mono',monospace;
-  font-size:10px;color:var(--gray);
-  letter-spacing:1px;
-}
+.votes-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:24px; }
+.vote-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:14px 16px; cursor:pointer; transition:transform 0.2s,border-color 0.2s; position:relative; animation:fadeUp 0.35s ease both; }
+.vote-card:hover { transform:translateY(-2px); border-color:rgba(0,212,255,0.25); }
+.vote-card.v-bullish { border-color:rgba(0,255,136,0.35); background:rgba(0,255,136,0.04); }
+.vote-card.v-bearish { border-color:rgba(255,51,102,0.35); background:rgba(255,51,102,0.04); }
+.vote-card.v-neutral { border-color:rgba(0,212,255,0.25); background:rgba(0,212,255,0.04); }
+.vote-card.v-abstain { opacity:0.45; }
+@keyframes fadeUp { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:translateY(0) } }
 
-.tally-row{
-  display:flex;gap:10px;
-  padding:12px 0;
-  border-top:1px solid var(--border);
-  flex-wrap:wrap;
-}
-.tally-item{
-  display:flex;align-items:center;gap:6px;
-  padding:5px 12px;border-radius:6px;
-  background:rgba(0,0,0,0.25);
-  font-family:'JetBrains Mono',monospace;font-size:11px;
-}
-.tally-label{color:var(--gray);letter-spacing:1px;}
-.tally-num{font-weight:700;}
-.tally-bull .tally-num{color:var(--green);}
-.tally-bear .tally-num{color:var(--red);}
-.tally-neutral .tally-num{color:var(--lgray);}
-.tally-abstain .tally-num{color:var(--gray);}
+.vote-header { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+.vote-badge { width:30px; height:30px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-family:'Orbitron',sans-serif; font-size:9px; font-weight:900; flex-shrink:0; border:1px solid var(--border); background:var(--card2); color:var(--gray); }
+.vote-card.v-bullish .vote-badge { background:rgba(0,255,136,0.15); color:var(--green); border-color:rgba(0,255,136,0.3); }
+.vote-card.v-bearish .vote-badge { background:rgba(255,51,102,0.15); color:var(--red); border-color:rgba(255,51,102,0.3); }
+.vote-card.v-neutral .vote-badge { background:rgba(0,212,255,0.15); color:var(--cyan); border-color:rgba(0,212,255,0.3); }
 
-.reason-box{
-  margin-top:14px;padding:14px 18px;
-  border-radius:10px;
-  font-size:12px;line-height:1.8;
-  border-left:3px solid;
-  background:rgba(0,212,255,0.04);
-  border-color:var(--cyan);
-  color:#A0C8E0;
-}
-.reason-title{
-  font-family:'JetBrains Mono',monospace;
-  font-size:10px;letter-spacing:1px;
-  margin-bottom:6px;color:var(--cyan);
-  font-weight:700;
-}
+.vote-title { font-size:12px; font-weight:700; color:var(--white); line-height:1.3; }
+.vote-source { font-size:9px; color:var(--gray); font-family:'JetBrains Mono',monospace; margin-top:2px; }
+.vote-status { position:absolute; top:12px; right:12px; font-size:9px; font-weight:700; font-family:'JetBrains Mono',monospace; letter-spacing:1px; }
+.vote-card.v-bullish .vote-status { color:var(--green); }
+.vote-card.v-bearish .vote-status { color:var(--red); }
+.vote-card.v-neutral .vote-status { color:var(--cyan); }
+.vote-card.v-abstain .vote-status { color:var(--gray); }
 
-/* ─── 股神分析卡 ─── */
-.analysts-grid{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:12px;
-  margin-bottom:24px;
-}
-.analyst-card{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:12px;
-  padding:16px 18px;
-  transition:all 0.2s;
-  animation:fadeUp 0.4s ease both;
-  position:relative;
-  overflow:hidden;
-}
-.analyst-card::before{
-  content:'';
-  position:absolute;top:0;left:0;
-  width:3px;height:100%;
-  background:var(--accent,var(--gray));
-  opacity:0.7;
-}
-.analyst-card:hover{transform:translateY(-2px);border-color:var(--border2);}
+.vote-note { font-size:11px; color:var(--gray); line-height:1.5; margin-top:4px; min-height:30px; word-break:break-all; }
+.vote-card.v-bullish .vote-note { color:#60B890; }
+.vote-card.v-bearish .vote-note { color:#C85070; }
+.vote-card.v-neutral .vote-note { color:#60A8C8; }
 
-.analyst-card.v-bullish{--accent:var(--green);}
-.analyst-card.v-bearish{--accent:var(--red);}
-.analyst-card.v-neutral{--accent:var(--lgray);}
-.analyst-card.v-abstain{--accent:var(--gray);opacity:0.85;}
+.vote-conf { display:flex; align-items:center; gap:6px; margin-top:7px; }
+.vote-conf-bar { flex:1; height:3px; background:rgba(255,255,255,0.08); border-radius:2px; overflow:hidden; }
+.vote-conf-bar-inner { height:100%; transition:width 0.6s ease; }
+.vote-card.v-bullish .vote-conf-bar-inner { background:var(--green); }
+.vote-card.v-bearish .vote-conf-bar-inner { background:var(--red); }
+.vote-card.v-neutral .vote-conf-bar-inner { background:var(--cyan); }
+.vote-conf-text { font-size:9px; font-family:'JetBrains Mono',monospace; color:var(--gray); }
 
-@keyframes fadeUp{
-  from{opacity:0;transform:translateY(10px);}
-  to{opacity:1;transform:translateY(0);}
-}
+/* 支撐位面板 */
+.support-panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 20px; margin-bottom:20px; display:none; }
+.support-panel.show { display:block; }
+.support-list { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+.support-row { display:flex; align-items:center; gap:12px; padding:8px 12px; background:rgba(0,0,0,0.25); border-radius:8px; font-size:12px; }
+.support-emoji { font-size:14px; }
+.support-rank { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--gold); letter-spacing:1px; min-width:60px; }
+.support-price { font-family:'Orbitron',sans-serif; font-weight:700; color:var(--white); min-width:80px; }
+.support-distance { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--gray); min-width:55px; }
+.support-note { color:var(--lgray); font-size:11px; flex:1; }
 
-.analyst-head{
-  display:flex;justify-content:space-between;
-  align-items:flex-start;gap:10px;margin-bottom:8px;
-}
-.analyst-name-block{display:flex;flex-direction:column;gap:2px;}
-.analyst-name{
-  font-size:13px;font-weight:700;color:var(--white);
-}
-.analyst-key{
-  font-family:'JetBrains Mono',monospace;
-  font-size:9px;color:var(--gray);
-  letter-spacing:1px;text-transform:uppercase;
-}
-.vote-tag{
-  font-family:'Orbitron',sans-serif;
-  font-size:10px;font-weight:900;
-  padding:4px 10px;border-radius:5px;
-  letter-spacing:1.5px;flex-shrink:0;
-}
-.v-bullish .vote-tag{background:rgba(0,255,136,0.15);color:var(--green);}
-.v-bearish .vote-tag{background:rgba(255,51,102,0.15);color:var(--red);}
-.v-neutral .vote-tag{background:rgba(139,168,196,0.15);color:var(--lgray);}
-.v-abstain .vote-tag{background:rgba(74,101,128,0.2);color:var(--gray);}
+/* 槓桿耗損面板 */
+.decay-panel { background:rgba(255,107,53,0.05); border:1px solid rgba(255,107,53,0.2); border-radius:12px; padding:14px 18px; margin-bottom:20px; display:none; font-size:12px; line-height:1.7; color:#C87040; }
+.decay-panel.show { display:block; }
+.decay-title { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--orange); letter-spacing:1px; margin-bottom:6px; }
 
-.analyst-conf{
-  display:flex;align-items:center;gap:8px;
-  font-family:'JetBrains Mono',monospace;
-  font-size:10px;color:var(--gray);
-  margin-bottom:8px;
-}
-.conf-bar-outer{
-  flex:1;height:3px;
-  background:rgba(255,255,255,0.05);
-  border-radius:2px;overflow:hidden;
-}
-.conf-bar-inner{
-  height:100%;
-  background:var(--accent,var(--gray));
-  border-radius:2px;
-  transition:width 0.6s ease;
-}
+/* 錯誤狀態 */
+.error-panel { background:rgba(255,51,102,0.06); border:1px solid rgba(255,51,102,0.3); border-radius:12px; padding:20px 24px; text-align:center; display:none; }
+.error-panel.show { display:block; }
+.error-emoji { font-size:32px; margin-bottom:10px; }
+.error-title { font-size:14px; font-weight:700; color:var(--red); margin-bottom:6px; }
+.error-msg { font-size:12px; color:var(--lgray); line-height:1.7; }
 
-.analyst-note{
-  font-size:12px;color:var(--lgray);
-  line-height:1.6;
-  font-family:'Noto Sans TC',sans-serif;
-}
+/* Loading */
+.loading { text-align:center; padding:48px; display:none; }
+.loading.show { display:block; }
+.loading-text { font-family:'Orbitron',sans-serif; font-size:12px; color:var(--cyan); letter-spacing:2px; animation:blink 1s infinite; }
+@keyframes blink { 0%,100% { opacity:1 } 50% { opacity:0.3 } }
 
-/* ─── Footer ─── */
-.footer{
-  text-align:center;
-  font-size:10px;color:var(--gray);
-  font-family:'JetBrains Mono',monospace;
-  margin-top:30px;
-  letter-spacing:1px;
-  padding:14px 0;
-  border-top:1px solid var(--border);
-}
-
-@media(max-width:780px){
-  .analysts-grid{grid-template-columns:1fr;}
-  .summary-head{flex-direction:column;align-items:stretch;}
-  .summary-action{align-items:flex-start;}
-}
+@media (max-width:780px) { .votes-grid { grid-template-columns:repeat(2,1fr); } }
+@media (max-width:480px) { .votes-grid { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
 <div class="page">
 
-  <!-- Top Bar -->
-  <div class="top-bar">
-    <div class="logo">美股神器 <span>ANALYSIS</span></div>
-    <div class="top-right">
-      <div class="test-badge" id="testBadge" style="display:none">TEST</div>
-      <div class="usage-pill" id="usagePill" style="display:none">— / —</div>
-      <div class="clock" id="clock">--:--:--  TW</div>
-    </div>
+<div class="top-bar">
+  <div class="logo">STOCK <span>AI 分析</span></div>
+  <div style="display:flex; gap:12px; align-items:center;">
+    <div class="usage-tag" id="usageTag">--</div>
+    <div class="clock" id="clock">--:--:--  TW</div>
   </div>
+</div>
 
-  <!-- 輸入區 -->
-  <div class="input-section">
-    <div class="input-row">
-      <div class="input-group">
-        <div class="input-label">股票代號</div>
-        <input class="stock-input" id="tickerInput"
-               placeholder="美股輸英文代號  台股輸數字代號"
-               autocomplete="off"
-               onkeydown="if(event.key==='Enter')analyze()">
+<!-- 輸入 -->
+<div class="input-section">
+  <div class="input-row">
+    <div class="input-group">
+      <div class="input-label">股票代號</div>
+      <input class="stock-input" id="tickerInput" placeholder="ORCL" value="ORCL" onkeydown="if(event.key==='Enter')analyze()">
+    </div>
+    <div class="input-group">
+      <div class="input-label">市場</div>
+      <select class="market-select" id="marketSelect">
+        <option value="US">美股 US</option>
+        <option value="TW">台股 TW</option>
+      </select>
+    </div>
+    <button class="analyze-btn" id="analyzeBtn" onclick="analyze()">ANALYZE</button>
+  </div>
+  <div class="quick-row">
+    <span class="quick-label">QUICK :</span>
+    <button class="quick-tag" onclick="quickStock('ORCL','US')">ORCL 甲骨文</button>
+    <button class="quick-tag" onclick="quickStock('ORCX','US')">ORCX</button>
+    <button class="quick-tag" onclick="quickStock('SMR','US')">SMR 核電</button>
+    <button class="quick-tag" onclick="quickStock('SMUP','US')">SMUP</button>
+    <button class="quick-tag" onclick="quickStock('NVDA','US')">NVDA 輝達</button>
+    <button class="quick-tag" onclick="quickStock('TSM','US')">TSM 台積電 ADR</button>
+    <button class="quick-tag tw" onclick="quickStock('0050','TW')">TW 0050</button>
+    <button class="quick-tag tw" onclick="quickStock('00631L','TW')">TW 00631L</button>
+    <button class="quick-tag tw" onclick="quickStock('2330','TW')">TW 2330</button>
+  </div>
+</div>
+
+<!-- Loading -->
+<div class="loading" id="loading">
+  <div class="loading-text">ANALYZING ...</div>
+</div>
+
+<!-- 錯誤 -->
+<div class="error-panel" id="errorPanel">
+  <div class="error-emoji">⚠️</div>
+  <div class="error-title" id="errorTitle">分析失敗</div>
+  <div class="error-msg" id="errorMsg"></div>
+</div>
+
+<!-- 主體 -->
+<div id="resultArea" style="display:none">
+
+  <!-- 結論卡 -->
+  <div class="conclusion-panel show" id="conclusionPanel">
+    <div class="section-title">AI 交叉驗證結論</div>
+    <div class="conclusion-layout">
+      <div class="signal-circle" id="signalCircle">
+        <div class="signal-emoji" id="signalEmoji">⚪</div>
       </div>
-      <button class="analyze-btn" id="analyzeBtn" onclick="analyze()">ANALYZE</button>
-    </div>
-    <div class="quick-row">
-      <span class="quick-label">QUICK :</span>
-      <button class="quick-tag" onclick="quickStock('ORCL')">ORCL 甲骨文</button>
-      <button class="quick-tag" onclick="quickStock('SMR')">SMR 核電</button>
-      <button class="quick-tag" onclick="quickStock('NVDA')">NVDA 輝達</button>
-      <button class="quick-tag" onclick="quickStock('TSM')">TSM 台積電ADR</button>
-      <button class="quick-tag" onclick="quickStock('PLTR')">PLTR 帕蘭泰爾</button>
-      <button class="quick-tag tw" onclick="quickStock('0050')">TW  0050</button>
-      <button class="quick-tag tw" onclick="quickStock('00631L')">TW  00631L</button>
-      <button class="quick-tag tw" onclick="quickStock('2330')">TW  2330</button>
-    </div>
-  </div>
-
-  <!-- Loading -->
-  <div class="loading" id="loading">
-    <div class="loading-text">ANALYZING ...</div>
-    <div class="loading-sub" id="loadingSub">呼叫 6 套股神交叉分析中</div>
-  </div>
-
-  <!-- 錯誤訊息 -->
-  <div class="error-box" id="errorBox">
-    <div class="error-title">ERROR</div>
-    <div class="error-msg" id="errorMsg"></div>
-    <div class="error-hint" id="errorHint"></div>
-  </div>
-
-  <!-- 主結果區 -->
-  <div id="resultArea" style="display:none">
-
-    <!-- 摘要卡 -->
-    <div class="summary-panel" id="summaryPanel">
-      <div class="summary-head">
-        <div class="summary-stock">
-          <div class="summary-ticker" id="sumTicker">--</div>
-          <div class="summary-meta" id="sumMeta">--</div>
-        </div>
-        <div class="summary-action">
-          <div class="action-badge action-hold" id="sumAction">--</div>
-          <div class="confidence" id="sumConfidence">CONFIDENCE  --%</div>
-        </div>
-      </div>
-
-      <div class="tally-row" id="tallyRow"></div>
-
-      <div class="reason-box" id="reasonBox">
-        <div class="reason-title">分析結論</div>
-        <div id="reasonText">--</div>
+      <div class="signal-info">
+        <div class="signal-label" id="signalLabel">分析中</div>
+        <div class="signal-bar-outer"><div class="signal-bar-inner" id="signalBar" style="width:0%"></div></div>
+        <div class="signal-detail" id="signalDetail">--</div>
       </div>
     </div>
-
-    <!-- 6 套股神 -->
-    <div class="section-title" id="analystsTitle">— 套股神分析 · AI 精準交叉驗證</div>
-    <div class="analysts-grid" id="analystsGrid"></div>
-
+    <div class="suggestion-box sb-neutral" id="suggestionBox">
+      <div class="sb-title">建議操作</div>分析中...
+    </div>
+    <div class="holding-meta" id="holdingMeta"></div>
   </div>
 
-  <div class="footer">美股神器 STOCK SYSTEM · v7.0  |  資料源:09_api.gs analyze</div>
+  <!-- 槓桿耗損 -->
+  <div class="decay-panel" id="decayPanel">
+    <div class="decay-title">槓桿 ETF 耗損評估</div>
+    <div id="decayContent"></div>
+  </div>
+
+  <!-- 6 式卡片 -->
+  <div class="section-title" id="votesTitle">6 套 AI 神器交叉分析</div>
+  <div class="votes-grid" id="votesGrid"></div>
+
+  <!-- 支撐位 -->
+  <div class="support-panel" id="supportPanel">
+    <div class="section-title">主力支撐位偵測</div>
+    <div class="support-list" id="supportList"></div>
+  </div>
+
+</div>
 
 </div>
 
 <script>
 // ════════════════════════════════════════════════
-// 設定
+// v7.0 配置
 // ════════════════════════════════════════════════
 const GAS_API = 'https://script.google.com/macros/s/AKfycbzjaRxJhYkqNIaJaFxvSiy0L120H0m0k7NY_Vc6IXIw70kO2SIvf3fOf26TnhApTgrg/exec';
 
-// 從 URL 抓 userId
-function getUserId(){
-  const m = window.location.search.match(/[?&]id=([^&]+)/);
-  return m ? decodeURIComponent(m[1]) : '';
-}
-const USER_ID = getUserId();
+// 6 式 + 支撐位 顯示順序與標題
+const VOTE_DEFS = [
+  { key: 'premium',  num: '01', title: '開盤溢價率',  source: '老練股神 / RA 反推' },
+  { key: 'candy',    num: '02', title: 'CANDY 戰法',  source: 'CINDY 7 子式 / RA 反推' },
+  { key: 'whale',    num: '03', title: '主力鯨魚偵測', source: '量能突破 / 暗池吸出' },
+  { key: 'crash',    num: '04', title: '大跌警報',    source: '跌幅 + RSI 交叉' },
+  { key: 'jiansrc',  num: '05', title: '題材熱度',    source: '產業 + 過熱偵測' },
+  { key: 'substack', num: '06', title: '美股大叔',    source: 'Substack 即時郵件分析' },
+];
+
+// 6 式中文標題對應(API 給的 vote 結構不一定有這些 key,但至少 6 個固定)
+let userId = '';
 
 // ════════════════════════════════════════════════
-// 測試模式(v7.0.1):純前端模擬,不打 API
-// 用法:
-//   ?test=guest   → 路人(忽略 USER_ID)
-//   ?test=expired → 過期 VIP
-//   ?test=limit   → 達日上限
-//   ?test=tw_off  → 台股未上線
+// 取 userId(從 URL 參數)
 // ════════════════════════════════════════════════
-function getTestMode(){
-  const m = window.location.search.match(/[?&]test=([^&]+)/);
-  return m ? decodeURIComponent(m[1]) : '';
-}
-const TEST_MODE = getTestMode();
-if(TEST_MODE){
-  document.getElementById('testBadge').style.display = 'inline-block';
-  document.getElementById('testBadge').textContent = 'TEST · ' + TEST_MODE.toUpperCase();
+function getUserIdFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('id') || params.get('userId') || '';
 }
 
 // ════════════════════════════════════════════════
-// 投票名稱對照(對齊 05_analysis.gs v2.6 VOTE_NAMES)
+// JSONP helper(GAS 不支援 CORS,只能用 JSONP)
 // ════════════════════════════════════════════════
-const VOTE_NAMES = {
-  // 美股 6 式
-  premium:  '開盤溢價率',
-  candy:    'CANDY 戰法',
-  whale:    '鯨魚偵測',
-  crash:    '大跌警報',
-  jiansrc:  '題材熱度',
-  substack: '美股大叔',
-  // 台股 5 式
-  premium_tw:  '開盤溢價率',
-  candy_tw:    'CINDY 心法',
-  crash_tw:    '大盤情緒',
-  cmoney_news: '簡式選股',
-  chip_tw_v2:  '集保大戶模型'
-};
-
-// 美股 6 式有效 key、台股 5 式有效 key
-const US_KEYS = ['premium','candy','whale','crash','jiansrc','substack'];
-const TW_KEYS = ['premium_tw','candy_tw','crash_tw','cmoney_news','chip_tw_v2'];
-
-// 票名翻譯
-const VOTE_LABEL = {
-  bullish:  '看多',
-  bearish:  '看空',
-  neutral:  '中性',
-  abstain:  '棄權',
-  long:     '看多',
-  short:    '看空'
-};
-
-// ACTION 翻譯 + CSS class
-const ACTION_STYLE = {
-  '加碼':       { cls:'action-buy' },
-  '可考慮加碼': { cls:'action-buy' },
-  '進場':       { cls:'action-buy' },
-  '布局':       { cls:'action-buy' },
-  '持有':       { cls:'action-watch' },
-  '觀望':       { cls:'action-watch' },
-  '觀察':       { cls:'action-watch' },
-  '訊號不足':   { cls:'action-hold' },
-  '減碼':       { cls:'action-warn' },
-  '小幅減倉':   { cls:'action-warn' },
-  '警示':       { cls:'action-warn' },
-  '警示出場':   { cls:'action-sell' },
-  '出場':       { cls:'action-sell' },
-  '全出':       { cls:'action-sell' },
-  '無法取得':   { cls:'action-hold' }
-};
-function actionClass(action){
-  if(!action) return 'action-hold';
-  const a = String(action).trim();
-  // 直接找
-  if(ACTION_STYLE[a]) return ACTION_STYLE[a].cls;
-  // 模糊比
-  if(/加碼|進場|布局|做多/.test(a)) return 'action-buy';
-  if(/全出|出場|賣出/.test(a)) return 'action-sell';
-  if(/減碼|減倉|警示/.test(a)) return 'action-warn';
-  if(/持有|觀望|觀察|不足/.test(a)) return 'action-watch';
-  return 'action-hold';
-}
-
-// ════════════════════════════════════════════════
-// 時鐘
-// ════════════════════════════════════════════════
-function updateClock(){
-  const now = new Date();
-  const tw = new Date(now.getTime()+(8*60+now.getTimezoneOffset())*60000);
-  document.getElementById('clock').textContent =
-    tw.toTimeString().slice(0,8)+'  TW';
-}
-setInterval(updateClock, 1000);
-updateClock();
-
-// ════════════════════════════════════════════════
-// JSONP 工具(避開 CORS)
-// ════════════════════════════════════════════════
-function jsonp(url, params, timeout){
+function callJsonp(action, params, timeoutMs) {
   return new Promise((resolve, reject) => {
-    const cbName = 'cb_' + Math.random().toString(36).slice(2);
-    const qs = Object.entries(params)
-      .map(([k,v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
-      .join('&');
-    const fullUrl = `${url}?${qs}&callback=${cbName}`;
-
+    const callbackName = 'cb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
     const script = document.createElement('script');
     let timer = null;
 
-    function cleanup(){
-      if(timer) clearTimeout(timer);
-      delete window[cbName];
-      if(script.parentNode) script.parentNode.removeChild(script);
-    }
-
-    window[cbName] = function(data){
+    window[callbackName] = function(data) {
       cleanup();
       resolve(data);
     };
 
-    script.onerror = function(){
-      cleanup();
-      reject(new Error('JSONP 連線失敗(網路或 GAS 端錯誤)'));
-    };
+    function cleanup() {
+      if (timer) clearTimeout(timer);
+      try { delete window[callbackName]; } catch(e) { window[callbackName] = undefined; }
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
 
     timer = setTimeout(() => {
       cleanup();
-      reject(new Error('連線超時(45 秒),請重試'));
-    }, timeout || 45000);
+      reject(new Error('TIMEOUT'));
+    }, timeoutMs || 60000);
 
-    script.src = fullUrl;
-    document.head.appendChild(script);
+    const queryParts = ['action=' + encodeURIComponent(action), 'callback=' + callbackName];
+    for (const k in params) {
+      if (params[k] !== undefined && params[k] !== null && params[k] !== '') {
+        queryParts.push(encodeURIComponent(k) + '=' + encodeURIComponent(params[k]));
+      }
+    }
+    script.src = GAS_API + '?' + queryParts.join('&');
+    script.onerror = () => { cleanup(); reject(new Error('NETWORK_ERROR')); };
+    document.body.appendChild(script);
   });
 }
 
 // ════════════════════════════════════════════════
-// Usage 顯示
+// 顯示 / 隱藏狀態
 // ════════════════════════════════════════════════
-function renderUsage(usage){
-  const pill = document.getElementById('usagePill');
-  if(!usage){
-    pill.style.display = 'none';
+function showLoading(show) {
+  document.getElementById('loading').classList.toggle('show', !!show);
+}
+function showError(title, msg) {
+  document.getElementById('errorPanel').classList.add('show');
+  document.getElementById('resultArea').style.display = 'none';
+  document.getElementById('errorTitle').textContent = title;
+  document.getElementById('errorMsg').textContent = msg;
+}
+function hideError() {
+  document.getElementById('errorPanel').classList.remove('show');
+}
+function showResult() {
+  document.getElementById('resultArea').style.display = 'block';
+}
+
+// ════════════════════════════════════════════════
+// 主流程:打 API
+// ════════════════════════════════════════════════
+async function analyze() {
+  if (!userId) {
+    showError('缺少使用者 ID', '請從 LINE Bot 點選分析按鈕進入,網址不能直接打開');
     return;
   }
-  pill.style.display = 'inline-block';
-  if(usage.isUnlimited){
-    pill.textContent = '∞  ADMIN';
-    pill.className = 'usage-pill unlimited';
+
+  const ticker = (document.getElementById('tickerInput').value || '').trim().toUpperCase();
+  if (!ticker) {
+    showError('代號為空', '請輸入股票代號');
     return;
   }
-  const remaining = usage.remaining || 0;
-  const limit = usage.limit || 0;
-  pill.textContent = `今日剩餘  ${remaining} / ${limit}`;
-  if(remaining <= 3) pill.className = 'usage-pill danger';
-  else pill.className = 'usage-pill';
-}
-
-// ════════════════════════════════════════════════
-// 啟動時抓 usage(讓 admin/vip 一進來就看到剩幾次)
-// ════════════════════════════════════════════════
-async function fetchUsage(){
-  if(!USER_ID) return;
-  try{
-    const data = await jsonp(GAS_API, {
-      action: 'usage',
-      id: USER_ID
-    }, 8000);
-    if(data && data.ok){
-      renderUsage(data);
-    }
-  } catch(e){
-    // usage 抓不到不影響主流程
-  }
-}
-fetchUsage();
-
-// ════════════════════════════════════════════════
-// 錯誤顯示
-// ════════════════════════════════════════════════
-function showError(msg, hint){
-  document.getElementById('errorMsg').textContent = msg || '未知錯誤';
-  document.getElementById('errorHint').textContent = hint || '';
-  document.getElementById('errorBox').classList.add('show');
-}
-function hideError(){
-  document.getElementById('errorBox').classList.remove('show');
-}
-
-// ════════════════════════════════════════════════
-// 主分析流程
-// ════════════════════════════════════════════════
-async function analyze(){
-  const tickerInput = document.getElementById('tickerInput');
-  const ticker = tickerInput.value.trim().toUpperCase();
-  const btn = document.getElementById('analyzeBtn');
 
   hideError();
-
-  if(!ticker){
-    showError('請先輸入股票代號',
-              '美股範例:NVDA、ORCL、TSM    台股範例:0050、00631L、2330');
-    return;
-  }
-
-  // ─── 測試模式攔截(v7.0.1)─────────────────────
-  if(TEST_MODE){
-    handleTestMode(ticker);
-    return;
-  }
-
-  if(!USER_ID){
-    showError('沒有 USER ID',
-              '請從 LINE Bot @368ceoiv 的「個股分析」按鈕進入此頁,直接打網址沒有身分驗證');
-    return;
-  }
-
-  // UI 切到 loading
+  showLoading(true);
   document.getElementById('resultArea').style.display = 'none';
-  document.getElementById('loading').classList.add('show');
-  document.getElementById('loadingSub').textContent = '呼叫 6 套股神交叉分析中(約 10-30 秒)...';
-  btn.disabled = true;
+  document.getElementById('analyzeBtn').disabled = true;
 
-  try{
-    const data = await jsonp(GAS_API, {
-      action: 'analyze',
-      id: USER_ID,
+  try {
+    const data = await callJsonp('analyze', {
+      id: userId,
       symbol: ticker
     }, 60000);
 
-    document.getElementById('loading').classList.remove('show');
-    btn.disabled = false;
+    showLoading(false);
+    document.getElementById('analyzeBtn').disabled = false;
 
-    // ─── 守門員回應處理 ───
-    if(!data){
-      showError('沒收到回應','請稍後再試');
+    if (!data || data.ok === false) {
+      handleApiError(data);
       return;
     }
 
-    // 更新 usage(每次回應都帶)
-    if(data.usage) renderUsage(data.usage);
-
-    // 守門員擋下(NOT_ACTIVE / USER_NOT_FOUND / NO_USER_ID)
-    if(data.ok === false){
-      handleApiError(data, ticker);
+    if (!data.votes) {
+      showError('回應異常', '後端沒有回傳 votes 結構');
       return;
     }
 
-    // 沒 votes(可能後端壞了)
-    if(!data.votes){
-      showError('後端沒回傳投票資料',
-                'data.votes 是空的,請稍後重試或聯繫管理員');
-      return;
-    }
+    renderResult(data);
+    showResult();
 
-    renderResult(ticker, data);
-
-  } catch(e){
-    document.getElementById('loading').classList.remove('show');
-    btn.disabled = false;
-    showError('連線失敗:' + (e.message || e),
-              '可能原因:網路斷線、GAS 部署過期、或此股票後端尚未支援');
+  } catch(e) {
+    showLoading(false);
+    document.getElementById('analyzeBtn').disabled = false;
+    showError('連線失敗', e.message === 'TIMEOUT' ? '60 秒沒回應,請稍後再試' : '無法連到伺服器:' + e.message);
   }
 }
 
-// ════════════════════════════════════════════════
-// 測試模式處理(v7.0.1)
-// 純前端模擬 09_api.gs 各種錯誤回應,不打 API
-// ════════════════════════════════════════════════
-function handleTestMode(ticker){
-  // 模擬延遲讓畫面真實一點
-  document.getElementById('resultArea').style.display = 'none';
-  document.getElementById('loading').classList.add('show');
-  document.getElementById('loadingSub').textContent = `[TEST · ${TEST_MODE}] 模擬 API 回應中...`;
+function handleApiError(data) {
+  if (!data) {
+    showError('無回應', '後端沒回任何資料');
+    return;
+  }
+  const errCode = data.error || '';
+  const msg = data.message || '未知錯誤';
 
-  setTimeout(() => {
-    document.getElementById('loading').classList.remove('show');
-
-    let mockData;
-    switch(TEST_MODE){
-      case 'guest':
-        // 路人(沒 USER_ID 或被守門員擋)
-        mockData = {
-          ok: false,
-          error: 'USER_NOT_FOUND',
-          message: '查無此用戶,請先加 LINE Bot @368ceoiv'
-        };
-        break;
-      case 'expired':
-        mockData = {
-          ok: false,
-          error: 'NOT_ACTIVE',
-          plan: 'expired',
-          message: '您的 VIP 已過期,請續費(私訊 LINE @368ceoiv)'
-        };
-        break;
-      case 'limit':
-        mockData = {
-          ok: false,
-          error: 'DAILY_LIMIT_EXCEEDED',
-          message: '今日查詢次數已達上限(20/20),請明日再試或升級方案',
-          usage: { used:20, limit:20, remaining:0, isUnlimited:false }
-        };
-        break;
-      case 'tw_off':
-        mockData = {
-          ok: false,
-          error: 'TW_NOT_SUPPORTED',
-          message: '台股分析尚未上線(14_tw_voting.gs 未載入),請聯繫管理員',
-          usage: { used:0, limit:20, remaining:20, isUnlimited:false }
-        };
-        break;
-      default:
-        showError(`未知測試模式:${TEST_MODE}`,
-                  '可用模式:guest / expired / limit / tw_off');
-        return;
-    }
-
-    if(mockData.usage) renderUsage(mockData.usage);
-    handleApiError(mockData, ticker);
-  }, 800);
-}
-
-
-function handleApiError(data, ticker){
-  const code = data.error || '';
-  const msg = data.message || '';
-
-  switch(code){
-    case 'NO_USER_ID':
-      showError('未提供 USER ID',
-                '請從 LINE 進入,網址要帶 ?id=Uxxx');
-      return;
-    case 'USER_NOT_FOUND':
-      showError('查無此用戶',
-                '請先加 LINE Bot @368ceoiv 並完成註冊');
-      return;
-    case 'NOT_ACTIVE':
-      showError(msg || '帳號目前無法使用此功能',
-                `方案:${data.plan || '未知'}  · 私訊 LINE @368ceoiv 處理`);
-      return;
-    case 'DAILY_LIMIT_EXCEEDED':
-      showError(msg || '今日查詢次數已達上限',
-                '明日重置,或私訊 LINE @368ceoiv 升級方案');
-      if(data.usage) renderUsage(data.usage);
-      return;
-    case 'TW_NOT_SUPPORTED':
-      showError(msg || '台股分析尚未上線',
-                '台股投票引擎(14_tw_voting.gs)尚未部署,目前僅支援美股');
-      return;
-    default:
-      showError(msg || code || '未知錯誤',
-                ticker ? `代號:${ticker}` : '');
+  if (errCode === 'NOT_ACTIVE') {
+    showError('尚未開通', msg);
+  } else if (errCode === 'USER_NOT_FOUND') {
+    showError('查無此用戶', msg);
+  } else if (errCode === 'DAILY_LIMIT_EXCEEDED') {
+    showError('今日查詢已達上限', msg);
+    if (data.usage) updateUsageTag(data.usage);
+  } else if (errCode === 'TW_NOT_SUPPORTED') {
+    showError('台股尚未上線', msg);
+  } else {
+    showError('分析失敗', msg + (errCode ? ' [' + errCode + ']' : ''));
   }
 }
 
 // ════════════════════════════════════════════════
 // 渲染結果
 // ════════════════════════════════════════════════
-function renderResult(ticker, data){
-  const isTw = TW_KEYS.some(k => data.votes[k]);
-  const validKeys = isTw ? TW_KEYS : US_KEYS;
+function renderResult(data) {
+  // 1. 用量徽章
+  if (data.usage) updateUsageTag(data.usage);
 
-  // 過濾出該市場的有效投票
-  const voteEntries = validKeys
-    .filter(k => data.votes[k] && typeof data.votes[k].vote !== 'undefined')
-    .map(k => ({ key: k, ...data.votes[k] }));
+  // 2. 結論卡
+  renderConclusion(data.votes.conclusion, data);
 
-  // 摘要區
-  document.getElementById('sumTicker').textContent = data.ticker || ticker;
+  // 3. 持有期 + 槓桿標籤
+  renderHoldingMeta(data.votes.holdingPeriod, data.votes.leverageDecay);
 
-  // Meta(現價、漲跌)
-  const meta = buildMeta(data);
-  document.getElementById('sumMeta').innerHTML = meta;
+  // 4. 槓桿耗損
+  renderDecayPanel(data.votes.leverageDecay);
 
-  // ACTION badge
-  const action = data.action || '訊號不足';
-  const actionEl = document.getElementById('sumAction');
-  actionEl.textContent = action;
-  actionEl.className = 'action-badge ' + actionClass(action);
+  // 5. 6 式卡
+  renderVotes(data.votes);
 
-  // Confidence(從 conclusion.conf 或最大票的 conf)
-  const conf = computeConfidence(data, voteEntries);
-  document.getElementById('sumConfidence').textContent =
-    `CONFIDENCE  ${Math.round(conf*100)}%`;
+  // 6. 支撐位
+  renderSupports(data.votes.support);
 
-  // Tally
-  const tally = computeTally(voteEntries);
-  renderTally(tally);
-
-  // Reason
-  document.getElementById('reasonText').textContent =
-    data.reason || '(後端未提供分析說明)';
-
-  // 動態標題
-  document.getElementById('analystsTitle').textContent =
-    `${voteEntries.length} 套股神分析 · AI 精準交叉驗證`;
-
-  // 6 式卡片
-  renderAnalysts(voteEntries);
-
-  document.getElementById('resultArea').style.display = 'block';
-  // 滾到結果
-  setTimeout(() => {
-    document.getElementById('summaryPanel').scrollIntoView({behavior:'smooth',block:'start'});
-  }, 100);
+  // 7. votes 標題動態化(看成功幾式)
+  const successCount = countValidVotes(data.votes);
+  document.getElementById('votesTitle').textContent =
+    successCount + ' 套 AI 神器交叉分析';
 }
 
-// ────────────────────────────────────────────────
-// Meta 字串(現價 + 漲跌)
-// ────────────────────────────────────────────────
-function buildMeta(data){
-  const parts = [];
-
-  // 從 votes.premium.raw 拿價格(05_analysis.gs/10_voting 結構)
-  let price = null, pct = null, pre = null;
-  for(const k of ['premium','premium_tw','candy','candy_tw']){
-    const v = data.votes[k];
-    if(v && v.raw){
-      if(typeof v.raw.price === 'number') price = v.raw.price;
-      if(typeof v.raw.pct === 'number') pct = v.raw.pct;
-      if(typeof v.raw.prePct === 'number') pre = v.raw.prePct;
-      if(price !== null) break;
-    }
+function updateUsageTag(usage) {
+  const el = document.getElementById('usageTag');
+  if (!usage) { el.textContent = '--'; return; }
+  if (usage.isUnlimited) {
+    el.textContent = '今日 ∞';
+    el.style.color = 'var(--gold)';
+    el.style.borderColor = 'var(--gold)';
+  } else {
+    el.textContent = '今日剩餘 ' + usage.remaining + '/' + usage.limit;
+    el.style.color = usage.remaining <= 3 ? 'var(--orange)' : 'var(--cyan)';
+    el.style.borderColor = usage.remaining <= 3 ? 'var(--orange)' : 'var(--border)';
   }
-
-  // 也試試頂層欄位(09_api.gs v3.1.3 標準欄位)
-  if(price === null && typeof data.price === 'number') price = data.price;
-  if(pct === null && typeof data.pct === 'number') pct = data.pct;
-
-  const isTw = TW_KEYS.some(k => data.votes[k]);
-  const cur = isTw ? 'NT$' : '$';
-
-  if(price !== null){
-    parts.push(`${cur}${price.toFixed(2)}`);
-  }
-  if(pct !== null){
-    const sign = pct >= 0 ? '+' : '';
-    const cls = pct >= 0 ? 'up' : 'down';
-    parts.push(`<span class="pct ${cls}">${sign}${pct.toFixed(2)}%</span>`);
-  }
-  if(pre !== null && Math.abs(pre) > 0.01){
-    const sign = pre >= 0 ? '+' : '';
-    parts.push(`開盤 ${sign}${pre.toFixed(2)}%`);
-  }
-
-  if(parts.length === 0) return '(後端未回傳價格資訊)';
-  return parts.join('  ·  ');
 }
 
-// ────────────────────────────────────────────────
-// Confidence 計算
-// ────────────────────────────────────────────────
-function computeConfidence(data, voteEntries){
-  // 優先吃後端 conclusion.conf
-  if(data.conclusion && typeof data.conclusion.conf === 'number'){
-    return data.conclusion.conf;
+function renderConclusion(c, data) {
+  if (!c) {
+    document.getElementById('signalLabel').textContent = '結論計算失敗';
+    document.getElementById('signalDetail').textContent = '--';
+    return;
   }
-  // 沒有就算「主流票的平均 conf」
-  const counts = { bullish:0, bearish:0, neutral:0 };
-  voteEntries.forEach(v => {
-    const vote = (v.vote === 'long' ? 'bullish' : v.vote === 'short' ? 'bearish' : v.vote);
-    if(counts[vote] !== undefined) counts[vote]++;
-  });
-  // 找主流方向
-  let dominant = 'bullish';
-  if(counts.bearish > counts.bullish) dominant = 'bearish';
-  else if(counts.neutral >= counts.bullish && counts.neutral >= counts.bearish) dominant = 'neutral';
 
-  const dominantVotes = voteEntries.filter(v => {
-    const vote = (v.vote === 'long' ? 'bullish' : v.vote === 'short' ? 'bearish' : v.vote);
-    return vote === dominant;
-  });
+  // emoji + 顏色
+  document.getElementById('signalEmoji').textContent = c.signalEmoji || '⚪';
+  document.getElementById('signalLabel').textContent = c.signalLabel || '訊號不足';
 
-  if(dominantVotes.length === 0) return 0;
-  const sumConf = dominantVotes.reduce((s,v) => s + (v.conf || 0), 0);
-  return sumConf / dominantVotes.length;
+  let color, sbClass;
+  if (c.finalSignal === 'bullish') { color = 'var(--green)'; sbClass = 'sb-bullish'; }
+  else if (c.finalSignal === 'bearish') { color = 'var(--red)'; sbClass = 'sb-bearish'; }
+  else if (c.finalSignal === 'neutral') { color = 'var(--cyan)'; sbClass = 'sb-neutral'; }
+  else { color = 'var(--gray)'; sbClass = 'sb-insufficient'; }
+
+  document.getElementById('signalCircle').style.borderColor = color;
+  document.getElementById('signalLabel').style.color = color;
+
+  // 信心 bar
+  const conf = (typeof c.confidence === 'number') ? c.confidence : 0;
+  const bar = document.getElementById('signalBar');
+  setTimeout(() => { bar.style.width = (conf * 100) + '%'; bar.style.background = color; }, 50);
+
+  // 細節
+  const counts = c.counts || {};
+  const detail = '看多 ' + (counts.bullish || 0) +
+                 ' · 看空 ' + (counts.bearish || 0) +
+                 ' · 中性 ' + (counts.neutral || 0) +
+                 ' · 棄權 ' + (counts.abstain || 0) +
+                 '   |   權重 ' + (c.bullishWeight || 0) + ' vs ' + (c.bearishWeight || 0);
+  document.getElementById('signalDetail').textContent = detail;
+
+  // 建議框
+  const sb = document.getElementById('suggestionBox');
+  sb.className = 'suggestion-box ' + sbClass;
+  let html = '<div class="sb-title">建議操作</div>' + escapeHtml(c.suggestion || '--');
+  if (c.alertNote) {
+    html += '<div class="alert-line">' + escapeHtml(c.alertNote) + '</div>';
+  }
+  sb.innerHTML = html;
 }
 
-// ────────────────────────────────────────────────
-// Tally(票數統計)
-// ────────────────────────────────────────────────
-function computeTally(voteEntries){
-  const tally = { bullish:0, bearish:0, neutral:0, abstain:0 };
-  voteEntries.forEach(v => {
-    let vote = v.vote;
-    if(vote === 'long') vote = 'bullish';
-    if(vote === 'short') vote = 'bearish';
-    if(tally[vote] !== undefined) tally[vote]++;
-    else tally.abstain++;
-  });
-  return tally;
+function renderHoldingMeta(holdingPeriod, leverageDecay) {
+  const wrap = document.getElementById('holdingMeta');
+  wrap.innerHTML = '';
+
+  if (holdingPeriod && holdingPeriod.label) {
+    const tag = document.createElement('div');
+    tag.className = 'meta-tag' + (holdingPeriod.locked ? ' locked' : '');
+    tag.textContent = '📅 ' + holdingPeriod.label + (holdingPeriod.locked ? ' (鎖定)' : '');
+    if (holdingPeriod.color) tag.style.color = holdingPeriod.color;
+    wrap.appendChild(tag);
+  }
+
+  if (leverageDecay && leverageDecay.ok && leverageDecay.isLeveraged) {
+    const tag = document.createElement('div');
+    tag.className = 'meta-tag leveraged';
+    const mult = leverageDecay.leverage || leverageDecay.multiplier || '?';
+    const target = leverageDecay.targetTicker || leverageDecay.target || '?';
+    tag.textContent = '⚡ 槓桿 ' + mult + 'x · 標的 ' + target;
+    wrap.appendChild(tag);
+  }
 }
 
-function renderTally(tally){
-  const row = document.getElementById('tallyRow');
-  row.innerHTML = `
-    <div class="tally-item tally-bull">
-      <span class="tally-label">看多</span>
-      <span class="tally-num">${tally.bullish}</span>
-    </div>
-    <div class="tally-item tally-bear">
-      <span class="tally-label">看空</span>
-      <span class="tally-num">${tally.bearish}</span>
-    </div>
-    <div class="tally-item tally-neutral">
-      <span class="tally-label">中性</span>
-      <span class="tally-num">${tally.neutral}</span>
-    </div>
-    <div class="tally-item tally-abstain">
-      <span class="tally-label">棄權</span>
-      <span class="tally-num">${tally.abstain}</span>
-    </div>
-  `;
+function renderDecayPanel(decay) {
+  const panel = document.getElementById('decayPanel');
+  const content = document.getElementById('decayContent');
+  if (!decay || !decay.ok || !decay.isLeveraged) {
+    panel.classList.remove('show');
+    return;
+  }
+
+  let html = '';
+  if (decay.decayPct !== undefined) {
+    html += '近 30 日槓桿耗損約 <strong>' + decay.decayPct + '%</strong>';
+  }
+  if (decay.decayLevel) {
+    html += '(等級:' + decay.decayLevel + ')';
+  }
+  if (decay.note) {
+    html += '<br>' + escapeHtml(decay.note);
+  }
+  if (decay.targetReturn !== undefined && decay.actualReturn !== undefined) {
+    html += '<br>標的報酬 ' + decay.targetReturn + '% · 實際 ' + decay.actualReturn + '%';
+  }
+  if (!html) html = '槓桿 ETF 已偵測,但耗損數據不足';
+
+  content.innerHTML = html;
+  panel.classList.add('show');
 }
 
-// ────────────────────────────────────────────────
-// 渲染 6 式卡片
-// ────────────────────────────────────────────────
-function renderAnalysts(voteEntries){
-  const grid = document.getElementById('analystsGrid');
+function countValidVotes(votes) {
+  let n = 0;
+  for (const def of VOTE_DEFS) {
+    const v = votes[def.key];
+    if (v && v.vote && v.vote !== 'abstain') n++;
+  }
+  return n;
+}
+
+function renderVotes(votes) {
+  const grid = document.getElementById('votesGrid');
   grid.innerHTML = '';
 
-  voteEntries.forEach((v, i) => {
-    let voteNorm = v.vote;
-    if(voteNorm === 'long') voteNorm = 'bullish';
-    if(voteNorm === 'short') voteNorm = 'bearish';
-
+  VOTE_DEFS.forEach((def, i) => {
+    const v = votes[def.key];
     const card = document.createElement('div');
-    card.className = 'analyst-card v-' + voteNorm;
-    card.style.animationDelay = (i * 0.05) + 's';
+    let voteValue = (v && v.vote) ? v.vote : 'abstain';
+    if (!['bullish','bearish','neutral','abstain'].includes(voteValue)) voteValue = 'abstain';
 
-    const conf = Math.round((v.conf || 0) * 100);
-    const note = (v.note || '(無說明)').toString();
-    const safeName = VOTE_NAMES[v.key] || v.key;
-    const voteLabel = VOTE_LABEL[v.vote] || v.vote;
+    card.className = 'vote-card v-' + voteValue;
+    card.style.animationDelay = (i * 0.04) + 's';
 
-    card.innerHTML = `
-      <div class="analyst-head">
-        <div class="analyst-name-block">
-          <div class="analyst-name">${escapeHtml(safeName)}</div>
-          <div class="analyst-key">${escapeHtml(v.key)}</div>
-        </div>
-        <div class="vote-tag">${escapeHtml(voteLabel)}</div>
-      </div>
-      <div class="analyst-conf">
-        <span>CONF</span>
-        <div class="conf-bar-outer"><div class="conf-bar-inner" style="width:0%"></div></div>
-        <span>${conf}%</span>
-      </div>
-      <div class="analyst-note">${escapeHtml(note)}</div>
-    `;
+    const stLabel = {
+      bullish: '看多',
+      bearish: '看空',
+      neutral: '中性',
+      abstain: '棄權'
+    }[voteValue] || '--';
+
+    const conf = (v && typeof v.conf === 'number') ? v.conf : 0;
+    const note = (v && v.note) ? v.note : '無資料';
+
+    card.innerHTML =
+      '<div class="vote-status">' + stLabel + '</div>' +
+      '<div class="vote-header">' +
+        '<div class="vote-badge">' + def.num + '</div>' +
+        '<div>' +
+          '<div class="vote-title">' + escapeHtml(def.title) + '</div>' +
+          '<div class="vote-source">' + escapeHtml(def.source) + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="vote-note">' + escapeHtml(note) + '</div>' +
+      '<div class="vote-conf">' +
+        '<div class="vote-conf-bar"><div class="vote-conf-bar-inner" style="width:' + (conf * 100) + '%"></div></div>' +
+        '<div class="vote-conf-text">信心 ' + (conf * 100).toFixed(0) + '%</div>' +
+      '</div>';
+
+    // 點擊看 raw
+    card.onclick = () => {
+      let detailMsg = '【' + def.title + '】\n\n';
+      detailMsg += '判斷:' + stLabel + '\n';
+      detailMsg += '信心:' + (conf * 100).toFixed(0) + '%\n\n';
+      detailMsg += '說明:' + note;
+      if (v && v.raw) {
+        try {
+          detailMsg += '\n\n原始資料:\n' + JSON.stringify(v.raw, null, 2);
+        } catch(e) {}
+      }
+      alert(detailMsg);
+    };
+
     grid.appendChild(card);
-
-    // 動畫:延遲後拉滿信心度條
-    setTimeout(() => {
-      const bar = card.querySelector('.conf-bar-inner');
-      if(bar) bar.style.width = conf + '%';
-    }, 100 + i * 60);
   });
 }
 
-// ────────────────────────────────────────────────
-// HTML escape
-// ────────────────────────────────────────────────
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, c => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-  })[c]);
+function renderSupports(support) {
+  const panel = document.getElementById('supportPanel');
+  const list = document.getElementById('supportList');
+
+  if (!support || !support.raw || !support.raw.supports || support.raw.supports.length === 0) {
+    panel.classList.remove('show');
+    return;
+  }
+
+  list.innerHTML = '';
+  const supports = support.raw.supports;
+  supports.forEach((s, i) => {
+    const row = document.createElement('div');
+    row.className = 'support-row';
+    const rankLabel = ['第一道', '第二道', '第三道'][i] || ('第' + (i+1) + '道');
+    row.innerHTML =
+      '<div class="support-emoji">🛡️</div>' +
+      '<div class="support-rank">' + rankLabel + '</div>' +
+      '<div class="support-price">$' + s.price + '</div>' +
+      '<div class="support-distance">距離 ' + s.distance + '%</div>' +
+      '<div class="support-note">' + escapeHtml(s.note || '') + '</div>';
+    list.appendChild(row);
+  });
+
+  panel.classList.add('show');
 }
 
-// ────────────────────────────────────────────────
-// QUICK 按鈕
-// ────────────────────────────────────────────────
-function quickStock(ticker){
+// ════════════════════════════════════════════════
+// 工具
+// ════════════════════════════════════════════════
+function escapeHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function quickStock(ticker, market) {
   document.getElementById('tickerInput').value = ticker;
+  document.getElementById('marketSelect').value = market;
   analyze();
 }
 
-// 啟動時不自動 analyze(避免一進來就吃次數)
-// 等用戶按下 ANALYZE 才打 API
+function updateClock() {
+  const now = new Date();
+  const tw = new Date(now.getTime() + (8 * 60 + now.getTimezoneOffset()) * 60000);
+  document.getElementById('clock').textContent = tw.toTimeString().slice(0, 8) + '  TW';
+}
+
+// 載入用量
+async function loadUsage() {
+  if (!userId) return;
+  try {
+    const data = await callJsonp('usage', { id: userId }, 15000);
+    if (data && data.ok) updateUsageTag(data);
+  } catch(e) {
+    // 用量抓不到不影響主功能
+    console.warn('usage load failed:', e.message);
+  }
+}
+
+// ════════════════════════════════════════════════
+// 啟動
+// ════════════════════════════════════════════════
+window.onload = function() {
+  userId = getUserIdFromUrl();
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  if (!userId) {
+    showError('缺少使用者 ID', '請從 LINE Bot 點選分析按鈕進入,網址必須帶 ?id=Uxxxx');
+    document.getElementById('analyzeBtn').disabled = true;
+    return;
+  }
+
+  loadUsage();
+
+  // 預設不自動 analyze,等用戶按按鈕(避免 active 用戶白白消耗一次查詢額度)
+};
 </script>
 </body>
 </html>
