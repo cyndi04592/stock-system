@@ -1,7 +1,12 @@
 <!DOCTYPE html>
 <!--
 ═══════════════════════════════════════════════════════════
-  美股神器 - 個股分析頁  v7.0
+  美股神器 - 個股分析頁  v7.0.1
+  
+  v7.0.1 (2026/05/05 第四十二輪 patch):
+   - 加測試開關 ?test=guest/expired/limit/tw_off(純前端模擬,不打 API)
+   - 讓 admin 不用找過期 VIP 帳號就能看完所有錯誤畫面
+   - 測試模式右上角會顯示明顯紅色 TEST 標記
   
   v7.0 (2026/05/05 第四十二輪):
    - 砍 17 式 STOCK_MAPS 寫死資料(嚴重技術債)
@@ -92,6 +97,20 @@ body::before{
   background:rgba(255,51,102,0.08);
   border-color:rgba(255,51,102,0.3);
   color:var(--red);
+}
+.test-badge{
+  font-family:'Orbitron',sans-serif;
+  font-size:10px;font-weight:900;
+  padding:5px 12px;border-radius:14px;
+  background:rgba(255,51,102,0.15);
+  border:1px solid rgba(255,51,102,0.5);
+  color:var(--red);
+  letter-spacing:2px;
+  animation:pulse 1.5s infinite;
+}
+@keyframes pulse{
+  0%,100%{opacity:1;}
+  50%{opacity:0.6;}
 }
 .clock{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gray);}
 
@@ -408,6 +427,7 @@ body::before{
   <div class="top-bar">
     <div class="logo">美股神器 <span>ANALYSIS</span></div>
     <div class="top-right">
+      <div class="test-badge" id="testBadge" style="display:none">TEST</div>
       <div class="usage-pill" id="usagePill" style="display:none">— / —</div>
       <div class="clock" id="clock">--:--:--  TW</div>
     </div>
@@ -497,6 +517,24 @@ function getUserId(){
   return m ? decodeURIComponent(m[1]) : '';
 }
 const USER_ID = getUserId();
+
+// ════════════════════════════════════════════════
+// 測試模式(v7.0.1):純前端模擬,不打 API
+// 用法:
+//   ?test=guest   → 路人(忽略 USER_ID)
+//   ?test=expired → 過期 VIP
+//   ?test=limit   → 達日上限
+//   ?test=tw_off  → 台股未上線
+// ════════════════════════════════════════════════
+function getTestMode(){
+  const m = window.location.search.match(/[?&]test=([^&]+)/);
+  return m ? decodeURIComponent(m[1]) : '';
+}
+const TEST_MODE = getTestMode();
+if(TEST_MODE){
+  document.getElementById('testBadge').style.display = 'inline-block';
+  document.getElementById('testBadge').textContent = 'TEST · ' + TEST_MODE.toUpperCase();
+}
 
 // ════════════════════════════════════════════════
 // 投票名稱對照(對齊 05_analysis.gs v2.6 VOTE_NAMES)
@@ -683,6 +721,12 @@ async function analyze(){
     return;
   }
 
+  // ─── 測試模式攔截(v7.0.1)─────────────────────
+  if(TEST_MODE){
+    handleTestMode(ticker);
+    return;
+  }
+
   if(!USER_ID){
     showError('沒有 USER ID',
               '請從 LINE Bot @368ceoiv 的「個股分析」按鈕進入此頁,直接打網址沒有身分驗證');
@@ -738,8 +782,64 @@ async function analyze(){
 }
 
 // ════════════════════════════════════════════════
-// API 錯誤處理(對齊 09_api.gs v3.4 守門員回應)
+// 測試模式處理(v7.0.1)
+// 純前端模擬 09_api.gs 各種錯誤回應,不打 API
 // ════════════════════════════════════════════════
+function handleTestMode(ticker){
+  // 模擬延遲讓畫面真實一點
+  document.getElementById('resultArea').style.display = 'none';
+  document.getElementById('loading').classList.add('show');
+  document.getElementById('loadingSub').textContent = `[TEST · ${TEST_MODE}] 模擬 API 回應中...`;
+
+  setTimeout(() => {
+    document.getElementById('loading').classList.remove('show');
+
+    let mockData;
+    switch(TEST_MODE){
+      case 'guest':
+        // 路人(沒 USER_ID 或被守門員擋)
+        mockData = {
+          ok: false,
+          error: 'USER_NOT_FOUND',
+          message: '查無此用戶,請先加 LINE Bot @368ceoiv'
+        };
+        break;
+      case 'expired':
+        mockData = {
+          ok: false,
+          error: 'NOT_ACTIVE',
+          plan: 'expired',
+          message: '您的 VIP 已過期,請續費(私訊 LINE @368ceoiv)'
+        };
+        break;
+      case 'limit':
+        mockData = {
+          ok: false,
+          error: 'DAILY_LIMIT_EXCEEDED',
+          message: '今日查詢次數已達上限(20/20),請明日再試或升級方案',
+          usage: { used:20, limit:20, remaining:0, isUnlimited:false }
+        };
+        break;
+      case 'tw_off':
+        mockData = {
+          ok: false,
+          error: 'TW_NOT_SUPPORTED',
+          message: '台股分析尚未上線(14_tw_voting.gs 未載入),請聯繫管理員',
+          usage: { used:0, limit:20, remaining:20, isUnlimited:false }
+        };
+        break;
+      default:
+        showError(`未知測試模式:${TEST_MODE}`,
+                  '可用模式:guest / expired / limit / tw_off');
+        return;
+    }
+
+    if(mockData.usage) renderUsage(mockData.usage);
+    handleApiError(mockData, ticker);
+  }, 800);
+}
+
+
 function handleApiError(data, ticker){
   const code = data.error || '';
   const msg = data.message || '';
