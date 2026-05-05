@@ -334,6 +334,8 @@ async function analyze() {
     return;
   }
 
+  const market = (document.getElementById('marketSelect').value || 'US').trim().toUpperCase();
+
   hideError();
   showLoading(true);
   document.getElementById('resultArea').style.display = 'none';
@@ -342,7 +344,8 @@ async function analyze() {
   try {
     const data = await callJsonp('analyze', {
       id: userId,
-      symbol: ticker
+      symbol: ticker,
+      market: market
     }, 60000);
 
     showLoading(false);
