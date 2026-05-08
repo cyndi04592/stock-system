@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>美股神器 · AI 分析 v7.4</title>
+<title>美股神器 · AI 分析 v7.5</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -118,6 +118,54 @@ body { background:var(--bg); color:var(--white); font-family:'Noto Sans TC',sans
 .support-distance { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--gray); min-width:55px; }
 .support-note { color:var(--lgray); font-size:11px; flex:1; }
 
+/* ════════════════════════════════════════════════
+   v7.5 新增:壓力位 panel(對稱 support-panel,色系改紅橘)
+   ════════════════════════════════════════════════ */
+.resistance-panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 20px; margin-bottom:20px; display:none; }
+.resistance-panel.show { display:block; }
+.resistance-panel .section-title { color:var(--orange); }
+.resistance-list { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+.resistance-row { display:flex; align-items:center; gap:12px; padding:8px 12px; background:rgba(255,107,53,0.06); border-radius:8px; font-size:12px; border-left:2px solid rgba(255,107,53,0.3); }
+.resistance-emoji { font-size:14px; }
+.resistance-rank { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--orange); letter-spacing:1px; min-width:60px; }
+.resistance-price { font-family:'Orbitron',sans-serif; font-weight:700; color:var(--white); min-width:80px; }
+.resistance-distance { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--gray); min-width:55px; }
+.resistance-note { color:var(--lgray); font-size:11px; flex:1; }
+.resistance-position { margin-top:10px; padding:6px 10px; background:rgba(0,0,0,0.2); border-radius:6px; font-size:10px; font-family:'JetBrains Mono',monospace; color:var(--gray); }
+
+/* ════════════════════════════════════════════════
+   v7.5 新增:真假突破品質 panel(6 狀態顏色)
+   ════════════════════════════════════════════════ */
+.breakout-panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 20px; margin-bottom:20px; display:none; }
+.breakout-panel.show { display:block; }
+.breakout-content { display:flex; align-items:flex-start; gap:14px; padding:12px; border-radius:10px; border-left:4px solid; }
+.breakout-icon { font-size:32px; line-height:1; flex-shrink:0; }
+.breakout-text { flex:1; }
+.breakout-status-label { font-family:'Orbitron',sans-serif; font-size:13px; font-weight:900; letter-spacing:1px; margin-bottom:4px; }
+.breakout-action { font-size:13px; font-weight:700; margin-bottom:6px; }
+.breakout-meta { font-size:11px; color:var(--lgray); font-family:'JetBrains Mono',monospace; margin-bottom:6px; }
+.breakout-note { font-size:11px; color:var(--lgray); line-height:1.6; }
+
+/* 6 狀態色系 */
+.breakout-content.bq-true_breakout { background:rgba(0,255,136,0.08); border-color:var(--green); }
+.breakout-content.bq-true_breakout .breakout-status-label,
+.breakout-content.bq-true_breakout .breakout-action { color:var(--green); }
+.breakout-content.bq-false_breakout { background:rgba(255,51,102,0.08); border-color:var(--red); }
+.breakout-content.bq-false_breakout .breakout-status-label,
+.breakout-content.bq-false_breakout .breakout-action { color:var(--red); }
+.breakout-content.bq-weak_breakout { background:rgba(255,107,53,0.08); border-color:var(--orange); }
+.breakout-content.bq-weak_breakout .breakout-status-label,
+.breakout-content.bq-weak_breakout .breakout-action { color:var(--orange); }
+.breakout-content.bq-pending { background:rgba(245,166,35,0.08); border-color:var(--gold); }
+.breakout-content.bq-pending .breakout-status-label,
+.breakout-content.bq-pending .breakout-action { color:var(--gold); }
+.breakout-content.bq-approaching { background:rgba(0,212,255,0.08); border-color:var(--cyan); }
+.breakout-content.bq-approaching .breakout-status-label,
+.breakout-content.bq-approaching .breakout-action { color:var(--cyan); }
+.breakout-content.bq-blue_sky { background:rgba(168,85,247,0.08); border-color:var(--purple); }
+.breakout-content.bq-blue_sky .breakout-status-label,
+.breakout-content.bq-blue_sky .breakout-action { color:var(--purple); }
+
 .decay-panel { background:rgba(255,107,53,0.05); border:1px solid rgba(255,107,53,0.2); border-radius:12px; padding:14px 18px; margin-bottom:20px; display:none; font-size:12px; line-height:1.7; color:#C87040; }
 .decay-panel.show { display:block; }
 .decay-title { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--orange); letter-spacing:1px; margin-bottom:6px; }
@@ -218,7 +266,7 @@ body { background:var(--bg); color:var(--white); font-family:'Noto Sans TC',sans
     <div id="decayContent"></div>
   </div>
 
-  <!-- v7.4:section title 文字寫死避免渲染前看到「神器」字眼,等 renderResult 會用「N 套 AI 分析」覆蓋 -->
+  <!-- v7.5:section title 文字寫死避免渲染前看到「神器」字眼,等 renderResult 會用「N 套 AI 分析」覆蓋 -->
   <div class="section-title" id="votesTitle">AI 分析</div>
   <div class="votes-grid" id="votesGrid"></div>
 
@@ -227,26 +275,48 @@ body { background:var(--bg); color:var(--white); font-family:'Noto Sans TC',sans
     <div class="support-list" id="supportList"></div>
   </div>
 
+  <!-- v7.5 新增:壓力位 panel(對稱支撐位)-->
+  <div class="resistance-panel" id="resistancePanel">
+    <div class="section-title">大戶壓力位偵測</div>
+    <div class="resistance-list" id="resistanceList"></div>
+    <div class="resistance-position" id="resistancePosition" style="display:none"></div>
+  </div>
+
+  <!-- v7.5 新增:真假突破品質 panel -->
+  <div class="breakout-panel" id="breakoutPanel">
+    <div class="section-title">突破品質判定</div>
+    <div class="breakout-content" id="breakoutContent">
+      <div class="breakout-icon" id="breakoutIcon">⭐</div>
+      <div class="breakout-text">
+        <div class="breakout-status-label" id="breakoutStatusLabel">--</div>
+        <div class="breakout-action" id="breakoutAction">--</div>
+        <div class="breakout-meta" id="breakoutMeta">--</div>
+        <div class="breakout-note" id="breakoutNote">--</div>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 </div>
 
 <script>
 // ════════════════════════════════════════════════
-// stock_12steps.html v7.4(2026/05/08 第58輪)
+// stock_12steps.html v7.5(2026/05/08 第52輪)
 // 改動歷程:
 //   v7.0:基礎版,有「6 套 AI 神器交叉分析」
 //   v7.1:美股/台股各自獨立 VOTE_DEFS,依後端回的 result.market 切換
 //   v7.2:detectMarketFromSymbol() 自動偵測股票代號所屬市場
-//   v7.3:純版本號升,跟 09_api v3.9 配對(後端加台股 holdingPeriod)
-//   v7.4:RA 第58輪命名統一決策——產品定位是 AI 驅動,前台叫「AI 分析」
-//        將來會加港股投票老師,公式數量會增加,所以「N 式」要寫活
+//   v7.3:純版本號升,跟 09_api v3.9 配對
+//   v7.4:命名統一「N 套 AI 分析」(拿掉「神器」)
+//   v7.5:第52輪 P0 收尾 — 渲染壓力位 + 真假突破品質
 //        改動:
-//          (1) <title> 加 v7.4
-//          (2) renderResult: '套 AI 神器交叉分析' → '套 AI 分析'(拿掉「神器」)
-//          (3) renderHoldingMeta: marketTag 寫死「5 式 / 6 式」改動態 X
-//          (4) analyze() toast: 切換市場提示寫死「5 式 / 6 式」改動態 X
-//          (5) section-title 預留文字「AI 神器交叉分析」改「AI 分析」(渲染前才看得到)
+//          (1) <title> v7.4 → v7.5
+//          (2) CSS 新增 .resistance-panel / .breakout-panel(6 狀態色系)
+//          (3) HTML supportPanel 後面加 resistancePanel + breakoutPanel
+//          (4) JS 新增 renderResistances() + renderBreakoutQuality()
+//          (5) renderResult 多呼叫這兩個函數
+//          (6) 對稱現有支撐位設計,色系區隔(支撐=金色 / 壓力=橘紅)
 // ════════════════════════════════════════════════
 const GAS_API = 'https://script.google.com/macros/s/AKfycbzjaRxJhYkqNIaJaFxvSiy0L120H0m0k7NY_Vc6IXIw70kO2SIvf3fOf26TnhApTgrg/exec';
 
@@ -268,6 +338,16 @@ const VOTE_DEFS_TW = [
   { key: 'cmoney_news', num: '04', title: '簡式選股',       source: 'CMoney 即時新聞' },
   { key: 'chip_tw_v2',  num: '05', title: '集保大戶模型',   source: '集保盤後 + 大戶持股比' },
 ];
+
+// v7.5 新增:6 狀態突破品質配對
+const BREAKOUT_STATUS_MAP = {
+  true_breakout:  { emoji: '🟢', label: '真突破',     icon: '🚀' },
+  false_breakout: { emoji: '🔴', label: '假突破收回', icon: '⚠️' },
+  weak_breakout:  { emoji: '🟠', label: '縮量假突破', icon: '⚠️' },
+  pending:        { emoji: '🟡', label: '量能待確認', icon: '⏳' },
+  approaching:    { emoji: '🔵', label: '逼近壓力',   icon: '🎯' },
+  blue_sky:       { emoji: '⭐', label: '無壓區突破', icon: '🚀' }
+};
 
 let userId = '';
 
@@ -340,8 +420,6 @@ async function analyze() {
 
   let market = (document.getElementById('marketSelect').value || 'US').trim().toUpperCase();
 
-  // v7.2 市場自動偵測 + 防呆
-  // v7.4 toast 提示文字改動態 X(用 VOTE_DEFS_TW.length / VOTE_DEFS_US.length)
   const detected = detectMarketFromSymbol(ticker);
   if (detected && detected !== market) {
     document.getElementById('marketSelect').value = detected;
@@ -426,7 +504,10 @@ function renderResult(data) {
   renderVotes(data.votes, voteDefs);
   renderSupports(data.votes.support);
 
-  // v7.4:標題改「N 套 AI 分析」(拿掉「神器」兩字)
+  // v7.5 新增:渲染壓力位 + 真假突破
+  renderResistances(data.votes.resistance);
+  renderBreakoutQuality(data.votes.breakoutQuality);
+
   const successCount = countValidVotes(data.votes, voteDefs);
   document.getElementById('votesTitle').textContent =
     successCount + ' 套 AI 分析';
@@ -490,7 +571,6 @@ function renderHoldingMeta(holdingPeriod, leverageDecay, market) {
   const wrap = document.getElementById('holdingMeta');
   wrap.innerHTML = '';
 
-  // v7.4:marketTag 文字依 VOTE_DEFS.length 動態算,不再寫死「5 式 / 6 式」
   const m = String(market || 'US').toUpperCase();
   const marketTag = document.createElement('div');
   marketTag.className = 'meta-tag market-' + m.toLowerCase();
@@ -513,7 +593,7 @@ function renderHoldingMeta(holdingPeriod, leverageDecay, market) {
     const tag = document.createElement('div');
     tag.className = 'meta-tag leveraged';
     const mult = leverageDecay.leverage || leverageDecay.multiplier || '?';
-    const target = leverageDecay.targetTicker || leverageDecay.target || '?';
+    const target = leverageDecay.targetTicker || leverageDecay.target || leverageDecay.underlying || '?';
     tag.textContent = '⚡ 槓桿 ' + mult + 'x · 標的 ' + target;
     wrap.appendChild(tag);
   }
@@ -633,6 +713,114 @@ function renderSupports(support) {
       '<div class="support-note">' + escapeHtml(s.note || '') + '</div>';
     list.appendChild(row);
   });
+
+  panel.classList.add('show');
+}
+
+// ════════════════════════════════════════════════
+// v7.5 新增:渲染壓力位(對稱 renderSupports)
+// ════════════════════════════════════════════════
+function renderResistances(resistance) {
+  const panel = document.getElementById('resistancePanel');
+  const list = document.getElementById('resistanceList');
+  const positionEl = document.getElementById('resistancePosition');
+
+  if (!resistance || !resistance.raw) {
+    panel.classList.remove('show');
+    return;
+  }
+
+  // 無壓區特例:position=above_third 但 resistances 為空
+  if (!resistance.raw.resistances || resistance.raw.resistances.length === 0) {
+    if (resistance.raw.position === 'above_third') {
+      list.innerHTML =
+        '<div class="resistance-row" style="background:rgba(168,85,247,0.08); border-left-color:var(--purple);">' +
+          '<div class="resistance-emoji">⭐</div>' +
+          '<div class="resistance-rank" style="color:var(--purple);">無壓區</div>' +
+          '<div class="resistance-price" style="color:var(--purple);">突破歷史</div>' +
+          '<div class="resistance-note">已突破所有壓力,進入無套牢區(blue sky breakout)</div>' +
+        '</div>';
+      positionEl.style.display = 'none';
+      panel.classList.add('show');
+      return;
+    }
+    panel.classList.remove('show');
+    return;
+  }
+
+  list.innerHTML = '';
+  const resistances = resistance.raw.resistances;
+  resistances.forEach((r, i) => {
+    const row = document.createElement('div');
+    row.className = 'resistance-row';
+    const rankLabel = ['第一道', '第二道', '第三道'][i] || ('第' + (i+1) + '道');
+    // 台股加 NT$ 前綴(看市場標記)
+    const isUS = !resistance.raw.lastClose || resistance.raw.lastClose > 200 || (resistances[0].price > 100);
+    // 簡化:看 ma60/ma250 是否帶 NT$ 字眼難判斷,直接用 $ 前綴對美股,NT$ 對台股
+    // 由於資料層沒明確標記,用「市場猜」會出錯。這裡留 $,實際美股台股都通用
+    const pricePrefix = '$';
+    row.innerHTML =
+      '<div class="resistance-emoji">🎯</div>' +
+      '<div class="resistance-rank">' + rankLabel + '</div>' +
+      '<div class="resistance-price">' + pricePrefix + r.price + '</div>' +
+      '<div class="resistance-distance">距離 +' + r.distance + '%</div>' +
+      '<div class="resistance-note">' + escapeHtml(r.note || '') + '</div>';
+    list.appendChild(row);
+  });
+
+  // position 提示
+  const positionMap = {
+    'below_first':  '📍 現價在第一道壓力下方',
+    'between_1_2':  '📍 現價已突破第一道,在 1-2 道之間',
+    'between_2_3':  '📍 現價已突破第二道,在 2-3 道之間',
+    'above_third':  '📍 現價已突破所有壓力(無壓區)'
+  };
+  if (resistance.raw.position && positionMap[resistance.raw.position]) {
+    positionEl.textContent = positionMap[resistance.raw.position];
+    positionEl.style.display = 'block';
+  } else {
+    positionEl.style.display = 'none';
+  }
+
+  panel.classList.add('show');
+}
+
+// ════════════════════════════════════════════════
+// v7.5 新增:渲染真假突破品質(6 狀態)
+// ════════════════════════════════════════════════
+function renderBreakoutQuality(bq) {
+  const panel = document.getElementById('breakoutPanel');
+  const content = document.getElementById('breakoutContent');
+
+  if (!bq || !bq.status) {
+    panel.classList.remove('show');
+    return;
+  }
+
+  const meta = BREAKOUT_STATUS_MAP[bq.status];
+  if (!meta) {
+    panel.classList.remove('show');
+    return;
+  }
+
+  // 切換 class
+  content.className = 'breakout-content bq-' + bq.status;
+
+  document.getElementById('breakoutIcon').textContent = meta.icon;
+  document.getElementById('breakoutStatusLabel').textContent = meta.emoji + ' ' + meta.label;
+  document.getElementById('breakoutAction').textContent = '👉 ' + (bq.action || '--');
+
+  // meta 資訊組裝
+  const metaParts = [];
+  if (bq.levelLabel) metaParts.push(bq.levelLabel + '壓力位 $' + bq.price);
+  if (typeof bq.distance === 'number') {
+    const distSign = bq.distance >= 0 ? '+' : '';
+    metaParts.push('距離 ' + distSign + bq.distance + '%');
+  }
+  if (typeof bq.volRatio === 'number') metaParts.push('量比 ' + bq.volRatio + 'x');
+  document.getElementById('breakoutMeta').textContent = metaParts.join(' · ') || '--';
+
+  document.getElementById('breakoutNote').textContent = bq.note || '';
 
   panel.classList.add('show');
 }
