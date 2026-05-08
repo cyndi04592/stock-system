@@ -139,12 +139,20 @@ body { background:var(--bg); color:var(--white); font-family:'Noto Sans TC',sans
 .loading-text { font-family:'Orbitron',sans-serif; font-size:12px; color:var(--cyan); letter-spacing:2px; animation:blink 1s infinite; }
 @keyframes blink { 0%,100% { opacity:1 } 50% { opacity:0.3 } }
 
+/* v7.2 Toast 提示 */
+.toast { position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-20px); background:rgba(10,30,53,0.95); border:1px solid var(--gold); border-radius:10px; padding:12px 20px; color:var(--gold); font-size:12px; font-family:'JetBrains Mono',monospace; z-index:1000; opacity:0; transition:all 0.3s ease; pointer-events:none; box-shadow:0 4px 20px rgba(245,166,35,0.3); }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+.toast-icon { display:inline-block; margin-right:8px; }
+
 @media (max-width:780px) { .votes-grid { grid-template-columns:repeat(2,1fr); } }
 @media (max-width:480px) { .votes-grid { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
 <div class="page">
+
+<!-- v7.2 Toast 提示(自動切換市場時用)-->
+<div class="toast" id="toast"></div>
 
 <div class="top-bar">
   <div class="logo">STOCK <span>AI 分析</span></div>
@@ -240,12 +248,18 @@ body { background:var(--bg); color:var(--white); font-family:'Noto Sans TC',sans
 
 <script>
 // ════════════════════════════════════════════════
-// v7.1 配置(2026/05/08 第57輪 凱翊網頁版 6257 bug 修復)
-// 改動:
-//   1. 美股/台股各自獨立 VOTE_DEFS,依後端回的 result.market 切換
-//   2. 美股 6 式 = premium / candy / whale / crash / jiansrc / substack
-//      台股 5 式 = premium_tw / candy_tw / crash_tw / cmoney_news / chip_tw_v2
-//   3. 跟 LINE Flex 卡的命名一致(CINDY 心法 / 集保大戶模型 / 簡式選股)
+// v7.3 配置(2026/05/08 第57輪 配對 09_api v3.9)
+// 改動歷程:
+//   v7.0:基礎版,有「6 套 AI 神器交叉分析」
+//   v7.1:美股/台股各自獨立 VOTE_DEFS,依後端回的 result.market 切換
+//        美股 6 式 = premium / candy / whale / crash / jiansrc / substack
+//        台股 5 式 = premium_tw / candy_tw / crash_tw / cmoney_news / chip_tw_v2
+//        跟 LINE Flex 卡的命名一致(CINDY 心法 / 集保大戶模型 / 簡式選股)
+//   v7.2:detectMarketFromSymbol() 自動偵測股票代號所屬市場
+//        規則:純數字 4-6 碼(可帶 L 尾巴) = TW / 純英文 1-5 碼 = US
+//        若用戶選的市場跟代號不符,自動切換 + 跳 toast 告知(不打斷流程)
+//   v7.3:純版本號升,跟 09_api v3.9 配對(後端加台股 holdingPeriod「短線 ~3D」)
+//        前端 renderHoldingMeta 邏輯 0 動,自動讀後端的 holdingPeriod 物件顯示
 // ════════════════════════════════════════════════
 const GAS_API = 'https://script.google.com/macros/s/AKfycbzjaRxJhYkqNIaJaFxvSiy0L120H0m0k7NY_Vc6IXIw70kO2SIvf3fOf26TnhApTgrg/exec';
 
@@ -349,7 +363,20 @@ async function analyze() {
     return;
   }
 
-  const market = (document.getElementById('marketSelect').value || 'US').trim().toUpperCase();
+  let market = (document.getElementById('marketSelect').value || 'US').trim().toUpperCase();
+
+  // v7.2 市場自動偵測 + 防呆:從 symbol 樣子判斷實際市場,跟用戶選的不符就自動修正
+  const detected = detectMarketFromSymbol(ticker);
+  if (detected && detected !== market) {
+    // 自動切換選擇器 + 跳 toast
+    document.getElementById('marketSelect').value = detected;
+    market = detected;
+    if (detected === 'TW') {
+      showToast('🇹🇼 偵測到 ' + ticker + ' 是台股代號,已自動切換為台股 5 式分析');
+    } else {
+      showToast('🇺🇸 偵測到 ' + ticker + ' 是美股代號,已自動切換為美股 6 式分析');
+    }
+  }
 
   hideError();
   showLoading(true);
@@ -659,6 +686,31 @@ function escapeHtml(s) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+// v7.2:從股票代號樣子推測市場(跟後端 isTwStockBySymbol_ 邏輯一致)
+function detectMarketFromSymbol(sym) {
+  if (!sym) return null;
+  const s = String(sym).trim().toUpperCase();
+  // 純數字 4-6 碼,可能尾巴帶 L = 台股(0050/2330/6257/00631L)
+  if (/^\d{4,6}L?(\.TW)?$/.test(s)) return 'TW';
+  // 純英文 1-5 碼 = 美股(F/TSM/NVDA/ORCL/SMUP)
+  if (/^[A-Z]{1,5}$/.test(s)) return 'US';
+  // 其他(BRK.B/BRK-A 等特殊)放過,讓後端判
+  return null;
+}
+
+// v7.2:Toast 提示(3 秒淡出)
+let _toastTimer = null;
+function showToast(msg, durationMs) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => {
+    el.classList.remove('show');
+  }, durationMs || 3500);
 }
 
 function quickStock(ticker, market) {
