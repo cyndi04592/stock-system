@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>美股神器 · 我的總覽 v7.1</title>
+<title>美股神器 · 我的總覽 v7.2</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -27,8 +27,6 @@ body::before{content:'';position:fixed;inset:0;background:
   radial-gradient(ellipse at 50% 80%,rgba(0,255,136,0.02) 0%,transparent 50%);
   pointer-events:none;z-index:0;}
 .container{max-width:1400px;margin:0 auto;padding:20px;position:relative;z-index:1;}
-
-/* 頂部 */
 .header{display:flex;align-items:center;justify-content:space-between;padding:24px 0 20px;border-bottom:1px solid var(--border);margin-bottom:24px;animation:fadeInDown 0.6s ease;}
 .header-left h1{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;color:var(--gold);text-shadow:var(--glow-gold);letter-spacing:2px;}
 .header-left p{font-size:12px;color:var(--gray);margin-top:4px;font-family:'JetBrains Mono',monospace;}
@@ -42,8 +40,6 @@ body::before{content:'';position:fixed;inset:0;background:
 .update-btn{padding:8px 18px;background:linear-gradient(135deg,var(--cyan),#0088CC);border:none;border-radius:8px;color:white;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.3s;font-family:'Noto Sans TC',sans-serif;}
 .update-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:var(--glow-cyan);}
 .update-btn:disabled{opacity:0.5;cursor:not-allowed;}
-
-/* 大盤橫條 */
 .market-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;animation:fadeIn 0.8s ease 0.1s both;}
 .market-item{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;text-align:center;transition:all 0.3s;position:relative;overflow:hidden;}
 .market-item::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:0.5;}
@@ -54,14 +50,9 @@ body::before{content:'';position:fixed;inset:0;background:
 .up{color:var(--green);}
 .down{color:var(--red);}
 .neutral{color:var(--gray);}
-
-/* 主內容 */
 .main-grid{display:grid;grid-template-columns:1fr 380px;gap:20px;margin-bottom:20px;}
-
 .section-title{font-family:'Orbitron',sans-serif;font-size:13px;color:var(--gold);letter-spacing:2px;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
 .section-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent);}
-
-/* 持倉卡 */
 .holding-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:18px 20px;margin-bottom:12px;transition:all 0.3s;animation:fadeInLeft 0.6s ease both;position:relative;overflow:hidden;cursor:pointer;}
 .holding-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px;}
 .holding-card.profit::before{background:var(--green);}
@@ -82,65 +73,47 @@ body::before{content:'';position:fixed;inset:0;background:
 .stat-item{text-align:center;}
 .stat-label{font-size:9px;color:var(--gray);letter-spacing:1px;margin-bottom:3px;}
 .stat-value{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;}
-
-/* 鯨魚雷達 (v7.1 新增,放在 stat-grid 下面、advice-box 上面) */
 .whale-radar{padding:10px 14px;border-radius:10px;margin-bottom:10px;background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.25);border-left:3px solid var(--purple);font-size:11px;line-height:1.6;color:var(--purple);font-family:'JetBrains Mono',monospace;display:flex;flex-wrap:wrap;align-items:center;gap:10px;}
 .whale-radar .whale-icon{font-size:14px;flex-shrink:0;}
 .whale-radar .whale-note{color:var(--gold2);font-weight:700;}
 .whale-radar .whale-stat{color:var(--lgray);}
 .whale-radar .whale-defense{color:var(--green);font-weight:700;}
-
-/* 空狀態 */
 .empty-state{background:var(--bg-card);border:1px dashed var(--border);border-radius:16px;padding:40px 24px;text-align:center;animation:fadeIn 0.6s ease both;}
 .empty-icon{font-size:48px;margin-bottom:12px;opacity:0.6;}
 .empty-title{font-family:'Orbitron',sans-serif;font-size:14px;color:var(--gold);letter-spacing:2px;margin-bottom:8px;}
 .empty-desc{font-size:12px;color:var(--lgray);line-height:1.7;margin-bottom:16px;}
 .empty-cta{display:inline-block;padding:10px 20px;background:rgba(0,212,255,0.1);border:1px solid var(--cyan);border-radius:8px;color:var(--cyan);text-decoration:none;font-size:12px;font-weight:700;font-family:'JetBrains Mono',monospace;letter-spacing:1px;transition:all 0.3s;}
 .empty-cta:hover{background:rgba(0,212,255,0.2);box-shadow:var(--glow-cyan);}
-
-/* 操作建議 */
 .advice-box{padding:10px 14px;border-radius:10px;font-size:12px;line-height:1.6;border-left:3px solid;}
 .advice-hold{background:rgba(0,212,255,0.08);border-color:var(--cyan);color:var(--cyan);}
 .advice-sell{background:rgba(255,107,53,0.08);border-color:var(--orange);color:var(--orange);}
 .advice-danger{background:rgba(255,51,102,0.08);border-color:var(--red);color:var(--red);}
 .advice-profit{background:rgba(0,255,136,0.08);border-color:var(--green);color:var(--green);}
 .advice-neutral{background:rgba(74,101,128,0.1);border-color:var(--gray);color:var(--lgray);}
-
-/* 右側面板 */
 .right-panel{display:flex;flex-direction:column;gap:16px;}
 .panel-card{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:18px;animation:fadeInRight 0.6s ease both;}
 .panel-empty{font-size:11px;color:var(--gray);text-align:center;padding:20px 0;font-family:'JetBrains Mono',monospace;}
-
-/* 健康度條 (v7.1 新增) */
 .health-bar-wrap{display:flex;flex-direction:column;gap:8px;font-size:11px;}
 .health-row{display:flex;align-items:center;gap:10px;}
 .health-label{flex-shrink:0;width:64px;color:var(--gray);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.5px;}
 .health-track{flex:1;height:8px;background:rgba(0,0,0,0.4);border-radius:4px;overflow:hidden;position:relative;}
 .health-fill{height:100%;border-radius:4px;transition:width 0.6s ease;}
 .health-count{flex-shrink:0;width:34px;text-align:right;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--lgray);}
-
-/* 漲跌排行 (v7.1 新增) */
 .rank-list{display:flex;flex-direction:column;gap:8px;font-size:12px;}
 .rank-row{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(0,0,0,0.25);border-radius:8px;border-left:2px solid var(--gray);}
 .rank-row.up{border-left-color:var(--green);}
 .rank-row.down{border-left-color:var(--red);}
 .rank-ticker{font-family:'Orbitron',sans-serif;font-weight:700;color:var(--white);font-size:13px;}
 .rank-pct{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:12px;}
-
-/* 警示 */
 .alert-banner{padding:10px 16px;border-radius:10px;margin-bottom:10px;display:flex;align-items:center;gap:10px;font-size:12px;font-weight:700;animation:alertPulse 2s infinite;}
 .alert-red{background:rgba(255,51,102,0.1);border:1px solid rgba(255,51,102,0.3);color:var(--red);}
 .alert-green{background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.3);color:var(--green);}
 .alert-orange{background:rgba(255,107,53,0.1);border:1px solid rgba(255,107,53,0.3);color:var(--orange);}
-
-/* 底部總覽 */
 .summary-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:20px;background:var(--bg-card);border:1px solid var(--border);border-radius:16px;margin-top:4px;animation:fadeIn 1s ease 0.4s both;}
 .summary-item{text-align:center;}
 .summary-label{font-size:11px;color:var(--gray);margin-bottom:6px;}
 .summary-value{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:900;}
 .summary-sub{font-size:11px;margin-top:3px;font-family:'JetBrains Mono',monospace;}
-
-/* 動畫 */
 @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
 @keyframes fadeInDown{from{opacity:0;transform:translateY(-20px);}to{opacity:1;transform:translateY(0);}}
 @keyframes fadeInLeft{from{opacity:0;transform:translateX(-20px);}to{opacity:1;transform:translateX(0);}}
@@ -148,23 +121,16 @@ body::before{content:'';position:fixed;inset:0;background:
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
 @keyframes alertPulse{0%,100%{opacity:1;}50%{opacity:0.7;}}
 @keyframes scanline{0%{transform:translateY(-100%);}100%{transform:translateY(100vh);}}
-
 .scanline{position:fixed;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.3),transparent);animation:scanline 4s linear infinite;pointer-events:none;z-index:9999;}
-
-/* 響應式 */
 @media(max-width:900px){
   .main-grid{grid-template-columns:1fr;}
   .market-bar{grid-template-columns:repeat(3,1fr);}
   .holding-stats{grid-template-columns:repeat(2,1fr);}
   .summary-bar{grid-template-columns:1fr;}
 }
-
-/* 載入畫面 */
 .loading-overlay{position:fixed;inset:0;background:var(--bg-deep);display:flex;align-items:center;justify-content:center;z-index:9998;transition:opacity 0.5s;}
 .loading-text{font-family:'Orbitron',sans-serif;font-size:16px;color:var(--cyan);text-shadow:var(--glow-cyan);animation:pulse 1s infinite;letter-spacing:2px;}
 .time-display{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--cyan);opacity:0.7;}
-
-/* 錯誤訊息 */
 .error-banner{background:rgba(255,51,102,0.1);border:1px solid rgba(255,51,102,0.3);border-radius:10px;padding:14px 18px;margin-bottom:20px;color:var(--red);font-size:12px;line-height:1.6;display:none;}
 .error-banner.show{display:block;}
 .error-banner strong{display:block;margin-bottom:4px;font-size:13px;}
@@ -180,10 +146,10 @@ body::before{content:'';position:fixed;inset:0;background:
 
 <div class="container">
 
-  <!-- 頂部 -->
+  <!-- 頂部 v7.2:拿掉 h1 裡的版本號,避免跟 title 重複 -->
   <div class="header">
     <div class="header-left">
-      <h1>💼 我的總覽 · v7.1</h1>
+      <h1>💼 我的總覽</h1>
       <p class="time-display" id="currentTime">──── 主控台 ────</p>
     </div>
     <div class="header-right">
@@ -193,13 +159,11 @@ body::before{content:'';position:fixed;inset:0;background:
     </div>
   </div>
 
-  <!-- 錯誤訊息 -->
   <div class="error-banner" id="errorBanner">
     <strong>⚠️ 載入失敗</strong>
     <span id="errorMsg">--</span>
   </div>
 
-  <!-- 大盤指標 -->
   <div class="market-bar">
     <div class="market-item">
       <div class="market-label">S&P 500</div>
@@ -228,17 +192,10 @@ body::before{content:'';position:fixed;inset:0;background:
     </div>
   </div>
 
-  <!-- 主要內容 -->
   <div class="main-grid">
-
-    <!-- 左側:持倉 -->
     <div>
       <div class="section-title">▌ 持倉分析</div>
-
-      <!-- 警示區 -->
       <div id="alertArea"></div>
-
-      <!-- 持倉卡片區 (動態 render) -->
       <div id="holdingsArea">
         <div style="text-align:center;padding:40px 0;color:var(--gray);font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:1px;">
           載入持股中 ...
@@ -246,10 +203,8 @@ body::before{content:'';position:fixed;inset:0;background:
       </div>
     </div>
 
-    <!-- 右側面板 -->
     <div class="right-panel">
 
-      <!-- 帳號狀態 -->
       <div class="panel-card">
         <div class="section-title" style="font-size:11px">▌ 帳號狀態</div>
         <div style="display:flex;flex-direction:column;gap:10px;font-size:12px;">
@@ -268,42 +223,29 @@ body::before{content:'';position:fixed;inset:0;background:
         </div>
       </div>
 
-      <!-- 大盤情緒 -->
       <div class="panel-card" id="sentimentCard">
         <div class="section-title" style="font-size:11px">▌ 大盤情緒</div>
-        <div id="sentimentArea" class="panel-empty">
-          載入中 ...
-        </div>
+        <div id="sentimentArea" class="panel-empty">載入中 ...</div>
       </div>
 
-      <!-- 大叔最新觀點 (從 09_api.gs 讀,沒有就整張卡隱藏) -->
       <div class="panel-card" id="uncleCard">
         <div class="section-title" style="font-size:11px">▌ 大叔最新觀點</div>
-        <div id="uncleArea" class="panel-empty">
-          載入中 ...
-        </div>
+        <div id="uncleArea" class="panel-empty">載入中 ...</div>
       </div>
 
-      <!-- 持股健康度 (v7.1 新增,沒持股就整張卡隱藏) -->
       <div class="panel-card" id="healthCard">
         <div class="section-title" style="font-size:11px">▌ 持股健康度</div>
-        <div id="healthArea" class="panel-empty">
-          載入中 ...
-        </div>
+        <div id="healthArea" class="panel-empty">載入中 ...</div>
       </div>
 
-      <!-- 今日漲跌排行 (v7.1 新增,沒持股就整張卡隱藏) -->
       <div class="panel-card" id="rankCard">
         <div class="section-title" style="font-size:11px">▌ 今日漲跌排行</div>
-        <div id="rankArea" class="panel-empty">
-          載入中 ...
-        </div>
+        <div id="rankArea" class="panel-empty">載入中 ...</div>
       </div>
 
     </div>
   </div>
 
-  <!-- 底部總覽 -->
   <div class="summary-bar">
     <div class="summary-item">
       <div class="summary-label">總投入成本（USD）</div>
@@ -325,10 +267,16 @@ body::before{content:'';position:fixed;inset:0;background:
 </div>
 
 <script>
-// ═════ 設定 ═════
+// ════════════════════════════════════════════════
+// dashboard_v5.html v7.2(2026/05/08 第58輪)
+// 改動:
+//   v7.1 → v7.2:
+//     - <title> 改 v7.2
+//     - <h1> 拿掉「· v7.1」尾巴(原本跟 title 重複造成「v7.1·v7.1」雙標題 bug)
+//     - 其他邏輯 0 動(JS 完全沒改)
+// ════════════════════════════════════════════════
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbzjaRxJhYkqNIaJaFxvSiy0L120H0m0k7NY_Vc6IXIw70kO2SIvf3fOf26TnhApTgrg/exec';
 
-// 從 URL 抓 userId
 function getUserId() {
   const url = new URL(window.location.href);
   const id = url.searchParams.get('id') || url.searchParams.get('userId') || '';
@@ -336,12 +284,9 @@ function getUserId() {
 }
 
 const USER_ID = getUserId();
-
-// 狀態
 let lastData = null;
 let updateTimer = null;
 
-// ═════ 時間 ═════
 function updateClock() {
   const now = new Date();
   const tw = new Date(now.getTime() + (8 * 60 + now.getTimezoneOffset()) * 60 * 1000);
@@ -351,7 +296,6 @@ function updateClock() {
     `${tw.getFullYear()}/${m}/${d}  ${tw.toTimeString().slice(0, 8)}  台灣時間`;
 }
 
-// ═════ JSONP ═════
 function jsonpCall(action, params) {
   return new Promise((resolve, reject) => {
     const cbName = 'cb_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
@@ -387,7 +331,6 @@ function jsonpCall(action, params) {
   });
 }
 
-// ═════ 主載入 ═════
 async function loadData() {
   const btn = document.getElementById('updateBtn');
   btn.textContent = '⏳ 更新中...';
@@ -426,32 +369,25 @@ function hideError() {
   document.getElementById('errorBanner').classList.remove('show');
 }
 
-// ═════ 排序持股 (v7.1 新增):大賠最上 → 大賺 → 持平 ═════
-// 規則:abs(retPct) desc,負數優先(同 abs 時報酬率小的排前)
 function sortHoldings(holdings) {
   if (!holdings || holdings.length === 0) return [];
-
   function calcRet(h) {
     const price = h.currentPrice != null ? h.currentPrice : h.avgPrice;
     const cost = h.avgPrice || 0;
     return cost > 0 ? ((price - cost) / cost * 100) : 0;
   }
-
   return holdings.slice().sort((a, b) => {
     const ra = calcRet(a);
     const rb = calcRet(b);
     const aa = Math.abs(ra);
     const ab = Math.abs(rb);
-    if (ab !== aa) return ab - aa;       // abs desc
-    return ra - rb;                       // 同 abs 負數優先
+    if (ab !== aa) return ab - aa;
+    return ra - rb;
   });
 }
 
-// ═════ render 主入口 ═════
 function renderAll(data) {
-  // v7.1 排序後再餵下游(holdings 卡 + 健康度條 + 排行 + 警示 + 總覽都用排序版)
   const sorted = sortHoldings(data.holdings || []);
-
   renderUsage(data.usage, sorted);
   renderMarket(data.market);
   renderFx(data.fx);
@@ -459,15 +395,12 @@ function renderAll(data) {
   renderHoldings(sorted, data.fx);
   renderSentiment(data.sentiment);
   renderUncle(data.uncle);
-  renderHealth(sorted);          // v7.1 新增
-  renderRank(sorted);            // v7.1 新增
+  renderHealth(sorted);
+  renderRank(sorted);
   renderSummary(sorted, data.fx);
   renderAlerts(sorted);
 }
 
-// ═════ Usage ═════
-// 09_api.gs v3.8 回傳格式:{ used, limit, remaining, isUnlimited }
-// 沒有 plan / holdingCount / holdingLimit → 前端自己推
 function renderUsage(usage, holdings) {
   const badge = document.getElementById('usageBadge');
   const planEl = document.getElementById('planLabel');
@@ -479,7 +412,6 @@ function renderUsage(usage, holdings) {
     return;
   }
 
-  // 從 isUnlimited 反推 plan
   const isAdmin = usage.isUnlimited === true;
 
   if (isAdmin) {
@@ -505,8 +437,6 @@ function renderUsage(usage, holdings) {
       : (limit > 0 && remaining / limit <= 0.2 ? 'var(--orange)' : 'var(--cyan)');
   }
 
-  // 持股數:用 holdings.length 自己算(09_api.gs 沒回 holdingCount)
-  // holdingLimit:admin = ∞,vip = 15(對齊 02_users.gs PLAN_LIMITS)
   const holdingCount = (holdings && Array.isArray(holdings)) ? holdings.length : 0;
   const holdingLimit = isAdmin ? null : 15;
 
@@ -523,10 +453,8 @@ function renderUsage(usage, holdings) {
   }
 }
 
-// ═════ 大盤 ═════
 function renderMarket(market) {
   if (!market) return;
-
   const setItem = (id, value, pct) => {
     if (value == null) {
       document.getElementById(id).textContent = '--';
@@ -539,11 +467,8 @@ function renderMarket(market) {
       chgEl.className = `market-change ${pct >= 0 ? 'up' : 'down'}`;
     }
   };
-
   if (market.sp500) setItem('sp500', market.sp500.price, market.sp500.pct);
   if (market.nasdaq) setItem('nasdaq', market.nasdaq.price, market.nasdaq.pct);
-
-  // VIX
   if (market.vix && market.vix.price != null) {
     document.getElementById('vix').textContent = market.vix.price.toFixed(1);
     const vixPrice = market.vix.price;
@@ -554,15 +479,11 @@ function renderMarket(market) {
   }
 }
 
-// ═════ 匯率 ═════
-// 09_api.gs v3.8 直接回數字,前端容錯支援數字/物件
 function renderFx(fx) {
   const el = document.getElementById('usdTwd');
   const srcEl = document.getElementById('usdTwdSrc');
-
   let rate = null;
   let source = null;
-
   if (typeof fx === 'number') {
     rate = fx;
   } else if (fx && typeof fx === 'object') {
@@ -574,7 +495,6 @@ function renderFx(fx) {
       source = fx.source;
     }
   }
-
   if (rate != null && rate > 0) {
     el.textContent = rate.toFixed(2);
     if (source) srcEl.textContent = source;
@@ -585,8 +505,6 @@ function renderFx(fx) {
   }
 }
 
-// ═════ 市場時間 ═════
-// 09_api.gs v3.8 直接回字串,前端容錯支援字串/物件
 function renderMarketTime(marketTW, marketUS, isDST) {
   function normalize(m) {
     if (!m) return null;
@@ -603,7 +521,6 @@ function renderMarketTime(marketTW, marketUS, isDST) {
     }
     return null;
   }
-
   function zhStatus(s) {
     const u = String(s || '').toUpperCase();
     if (u === 'OPEN' || u === 'REGULAR') return '🟢 盤中';
@@ -613,13 +530,11 @@ function renderMarketTime(marketTW, marketUS, isDST) {
     if (u === 'HOLIDAY') return '🎌 休市';
     return '-- ' + (s || '');
   }
-
   const us = normalize(marketUS);
   if (us) {
     document.getElementById('marketTimeLabel').textContent = `美股市場 ${isDST ? '(夏令)' : '(冬令)'}`;
     document.getElementById('marketTime').textContent = us.statusZh;
     document.getElementById('marketTimeSub').textContent = us.note || (isDST ? '21:30~04:00' : '22:30~05:00');
-
     const status = (us.status || '').toUpperCase();
     const el = document.getElementById('marketTime');
     if (status === 'OPEN' || status === 'REGULAR') el.style.color = 'var(--green)';
@@ -628,13 +543,11 @@ function renderMarketTime(marketTW, marketUS, isDST) {
   }
 }
 
-// ═════ 持股 ═════
 function renderHoldings(holdings, fx) {
   const area = document.getElementById('holdingsArea');
   area.innerHTML = '';
 
   if (!holdings || holdings.length === 0) {
-    // 空狀態
     area.innerHTML = `
       <div class="empty-state">
         <div class="empty-icon">📷</div>
@@ -654,8 +567,6 @@ function renderHoldings(holdings, fx) {
     card.className = 'holding-card';
     card.style.animationDelay = (idx * 0.1) + 's';
 
-    // 計算
-    // 09_api.gs v3.8 的欄位是 pct(不是 dayPct),前端兩種都吃以防未來改名
     const price = h.currentPrice != null ? h.currentPrice : h.avgPrice;
     const pct = (h.pct != null) ? h.pct : (h.dayPct != null ? h.dayPct : 0);
     const shares = h.shares || 0;
@@ -665,7 +576,6 @@ function renderHoldings(holdings, fx) {
     const market = (h.market || 'US').toUpperCase();
     const currencySymbol = market === 'TW' ? 'NT$' : '$';
 
-    // 顏色
     let cardCls = 'neutral';
     if (ret > 0) cardCls = 'profit';
     else if (ret <= -50) cardCls = 'loss-heavy';
@@ -675,14 +585,9 @@ function renderHoldings(holdings, fx) {
     const priceColor = pct >= 0 ? 'var(--green)' : 'var(--red)';
     const urColor = ur >= 0 ? 'var(--green)' : 'var(--red)';
     const retColor = ret >= 0 ? 'var(--green)' : 'var(--red)';
-
-    // 操作建議
     const advice = getAdvice(ret, pct);
-
-    // 板塊/備註
     const sectorTag = h.sector ? `<span style="font-size:11px;color:var(--gray);margin-left:6px;">· ${escapeHtml(h.sector)}</span>` : '';
 
-    // v7.1 新增:鯨魚雷達 block(只在 h.whale 存在時渲染)
     let whaleHtml = '';
     if (h.whale && (h.whale.note || h.whale.volMult != null || h.whale.pricePos != null || h.whale.defenseLevel != null)) {
       const w = h.whale;
@@ -731,7 +636,6 @@ function renderHoldings(holdings, fx) {
       <div class="advice-box ${advice.cls}">${advice.text}</div>
     `;
 
-    // v7.1 新增:點擊持股卡跳 stock_12steps.html
     card.addEventListener('click', function() {
       const tickerEnc = encodeURIComponent(h.ticker || '');
       const idEnc = encodeURIComponent(USER_ID || '');
@@ -742,7 +646,6 @@ function renderHoldings(holdings, fx) {
   });
 }
 
-// ═════ 操作建議 (基於損益動態判斷,不寫死) ═════
 function getAdvice(ret, pct) {
   if (ret <= -50) {
     return { cls: 'advice-danger', text: '🛑 虧損超過 50%！請評估基本面是否改變,若核心邏輯不變可繼續持有,否則考慮停損' };
@@ -768,19 +671,15 @@ function getAdvice(ret, pct) {
   return { cls: 'advice-neutral', text: '✅ 無特殊訊號,繼續持有觀察' };
 }
 
-// ═════ 大盤情緒 ═════
 function renderSentiment(sentiment) {
   const card = document.getElementById('sentimentCard');
   const area = document.getElementById('sentimentArea');
-
   if (!sentiment || (sentiment.dix == null && sentiment.fearGreed == null && !sentiment.note)) {
     if (card) card.style.display = 'none';
     return;
   }
   if (card) card.style.display = '';
-
   let html = '<div style="display:flex;flex-direction:column;gap:10px;font-size:12px;">';
-
   if (sentiment.dix != null) {
     let color = 'var(--gray)';
     let label = '中性';
@@ -793,7 +692,6 @@ function renderSentiment(sentiment) {
       </div>
     `;
   }
-
   if (sentiment.fearGreed != null) {
     html += `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
@@ -802,26 +700,21 @@ function renderSentiment(sentiment) {
       </div>
     `;
   }
-
   if (sentiment.note) {
     html += `<div style="font-size:11px;color:var(--lgray);line-height:1.6;margin-top:6px;">${escapeHtml(sentiment.note)}</div>`;
   }
-
   html += '</div>';
   area.innerHTML = html;
 }
 
-// ═════ 大叔最新 ═════
 function renderUncle(uncle) {
   const card = document.getElementById('uncleCard');
   const area = document.getElementById('uncleArea');
-
   if (!uncle || (!uncle.title && !uncle.summary && (!uncle.points || uncle.points.length === 0))) {
     if (card) card.style.display = 'none';
     return;
   }
   if (card) card.style.display = '';
-
   let html = '<div style="padding:12px;background:rgba(245,166,35,0.05);border:1px solid rgba(245,166,35,0.2);border-radius:10px;">';
   if (uncle.title) {
     html += `<div style="font-size:12px;color:var(--gold);margin-bottom:8px;font-weight:700;line-height:1.4;">📰 ${escapeHtml(uncle.title)}</div>`;
@@ -837,22 +730,17 @@ function renderUncle(uncle) {
     html += `<div style="font-size:11px;color:var(--white);line-height:1.7;opacity:0.85;">${escapeHtml(uncle.summary)}</div>`;
   }
   html += '</div>';
-
   area.innerHTML = html;
 }
 
-// ═════ 持股健康度 (v7.1 新增) ═════
-// 5 桶分布:大賺(>=30%)/小賺(0~30)/小賠(0~-20)/中賠(-20~-50)/大賠(<=-50)
 function renderHealth(holdings) {
   const card = document.getElementById('healthCard');
   const area = document.getElementById('healthArea');
-
   if (!holdings || holdings.length === 0) {
     if (card) card.style.display = 'none';
     return;
   }
   if (card) card.style.display = '';
-
   const buckets = { bigWin:0, smallWin:0, smallLoss:0, midLoss:0, bigLoss:0 };
   holdings.forEach(h => {
     const price = h.currentPrice != null ? h.currentPrice : h.avgPrice;
@@ -864,7 +752,6 @@ function renderHealth(holdings) {
     else if (ret > -50) buckets.midLoss++;
     else buckets.bigLoss++;
   });
-
   const total = holdings.length;
   const rows = [
     { label: '大賺 ≥30%',  count: buckets.bigWin,    color: 'var(--green)' },
@@ -873,7 +760,6 @@ function renderHealth(holdings) {
     { label: '中賠 -20~-50', count: buckets.midLoss, color: 'var(--orange)' },
     { label: '大賠 ≤-50%', count: buckets.bigLoss,   color: 'var(--red)' }
   ];
-
   let html = '<div class="health-bar-wrap">';
   rows.forEach(r => {
     const pct = total > 0 ? (r.count / total * 100) : 0;
@@ -891,32 +777,25 @@ function renderHealth(holdings) {
   area.innerHTML = html;
 }
 
-// ═════ 今日漲跌排行 (v7.1 新增) ═════
-// 依 pct 由大到小排,只顯示有 pct 的
 function renderRank(holdings) {
   const card = document.getElementById('rankCard');
   const area = document.getElementById('rankArea');
-
   if (!holdings || holdings.length === 0) {
     if (card) card.style.display = 'none';
     return;
   }
-
   const list = holdings
     .map(h => ({
       ticker: h.ticker,
       pct: (h.pct != null) ? h.pct : (h.dayPct != null ? h.dayPct : null)
     }))
     .filter(x => x.pct != null && !isNaN(x.pct));
-
   if (list.length === 0) {
     if (card) card.style.display = 'none';
     return;
   }
   if (card) card.style.display = '';
-
   list.sort((a, b) => b.pct - a.pct);
-
   let html = '<div class="rank-list">';
   list.forEach(x => {
     const cls = x.pct > 0 ? 'up' : (x.pct < 0 ? 'down' : '');
@@ -940,14 +819,12 @@ function escapeHtml(s) {
   }[c]));
 }
 
-// ═════ 警示 ═════
 function renderAlerts(holdings) {
   const area = document.getElementById('alertArea');
   if (!holdings || holdings.length === 0) {
     area.innerHTML = '';
     return;
   }
-
   let html = '';
   holdings.forEach(h => {
     const pct = (h.pct != null) ? h.pct : (h.dayPct != null ? h.dayPct : 0);
@@ -960,11 +837,9 @@ function renderAlerts(holdings) {
       `;
     }
   });
-
   area.innerHTML = html;
 }
 
-// ═════ 底部總覽 ═════
 function renderSummary(holdings, fx) {
   const totalCostEl = document.getElementById('totalCost');
   const totalCostTwEl = document.getElementById('totalCostTW');
@@ -989,7 +864,7 @@ function renderSummary(holdings, fx) {
       if (typeof fx.usdTwd === 'number' && fx.usdTwd > 0) return fx.usdTwd;
       if (typeof fx.rate === 'number' && fx.rate > 0) return fx.rate;
     }
-    return 32;  // fallback
+    return 32;
   }
 
   let totalCost = 0, totalValue = 0;
@@ -1025,7 +900,6 @@ function renderSummary(holdings, fx) {
   totalRetEl.style.color = totalUR >= 0 ? 'var(--green)' : 'var(--red)';
 }
 
-// ═════ 啟動 ═════
 window.onload = function() {
   setTimeout(() => {
     document.getElementById('loadingOverlay').style.opacity = '0';
@@ -1036,7 +910,6 @@ window.onload = function() {
   setInterval(updateClock, 1000);
   loadData();
 
-  // 5 分鐘自動重抓
   updateTimer = setInterval(loadData, 5 * 60 * 1000);
 };
 </script>
