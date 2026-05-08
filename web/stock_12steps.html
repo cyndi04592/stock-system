@@ -67,8 +67,10 @@ body { background:var(--bg); color:var(--white); font-family:'Noto Sans TC',sans
 .meta-tag { padding:6px 12px; background:rgba(0,0,0,0.3); border:1px solid var(--border); border-radius:6px; font-size:11px; font-family:'JetBrains Mono',monospace; color:var(--lgray); }
 .meta-tag.locked { border-color:var(--gold); color:var(--gold); }
 .meta-tag.leveraged { border-color:var(--orange); color:var(--orange); }
+.meta-tag.market-tw { border-color:var(--gold); color:var(--gold); }
+.meta-tag.market-us { border-color:var(--cyan); color:var(--cyan); }
 
-/* 6 式卡片 */
+/* 投票卡片 */
 .section-title { font-family:'Orbitron',sans-serif; font-size:11px; color:var(--gold); letter-spacing:3px; margin-bottom:14px; display:flex; align-items:center; gap:10px; }
 .section-title::after { content:''; flex:1; height:1px; background:linear-gradient(90deg,var(--border),transparent); }
 
@@ -222,8 +224,8 @@ body { background:var(--bg); color:var(--white); font-family:'Noto Sans TC',sans
     <div id="decayContent"></div>
   </div>
 
-  <!-- 6 式卡片 -->
-  <div class="section-title" id="votesTitle">6 套 AI 神器交叉分析</div>
+  <!-- 投票式卡片 -->
+  <div class="section-title" id="votesTitle">AI 神器交叉分析</div>
   <div class="votes-grid" id="votesGrid"></div>
 
   <!-- 支撐位 -->
@@ -238,21 +240,34 @@ body { background:var(--bg); color:var(--white); font-family:'Noto Sans TC',sans
 
 <script>
 // ════════════════════════════════════════════════
-// v7.0 配置
+// v7.1 配置(2026/05/08 第57輪 凱翊網頁版 6257 bug 修復)
+// 改動:
+//   1. 美股/台股各自獨立 VOTE_DEFS,依後端回的 result.market 切換
+//   2. 美股 6 式 = premium / candy / whale / crash / jiansrc / substack
+//      台股 5 式 = premium_tw / candy_tw / crash_tw / cmoney_news / chip_tw_v2
+//   3. 跟 LINE Flex 卡的命名一致(CINDY 心法 / 集保大戶模型 / 簡式選股)
 // ════════════════════════════════════════════════
 const GAS_API = 'https://script.google.com/macros/s/AKfycbzjaRxJhYkqNIaJaFxvSiy0L120H0m0k7NY_Vc6IXIw70kO2SIvf3fOf26TnhApTgrg/exec';
 
-// 6 式 + 支撐位 顯示順序與標題
-const VOTE_DEFS = [
-  { key: 'premium',  num: '01', title: '開盤溢價率',  source: '老練股神 / RA 反推' },
+// 美股 6 式
+const VOTE_DEFS_US = [
+  { key: 'premium',  num: '01', title: '開盤溢價率',   source: '老練股神 / RA 反推' },
   { key: 'candy',    num: '02', title: 'CANDY 戰法',  source: 'CINDY 7 子式 / RA 反推' },
   { key: 'whale',    num: '03', title: '主力鯨魚偵測', source: '量能突破 / 暗池吸出' },
-  { key: 'crash',    num: '04', title: '大跌警報',    source: '跌幅 + RSI 交叉' },
-  { key: 'jiansrc',  num: '05', title: '題材熱度',    source: '產業 + 過熱偵測' },
-  { key: 'substack', num: '06', title: '美股大叔',    source: 'Substack 即時郵件分析' },
+  { key: 'crash',    num: '04', title: '大跌警報',     source: '跌幅 + RSI 交叉' },
+  { key: 'jiansrc',  num: '05', title: '題材熱度',     source: '產業 + 過熱偵測' },
+  { key: 'substack', num: '06', title: '美股大叔',     source: 'Substack 即時郵件分析' },
 ];
 
-// 6 式中文標題對應(API 給的 vote 結構不一定有這些 key,但至少 6 個固定)
+// 台股 5 式(命名跟 LINE Flex 卡一致)
+const VOTE_DEFS_TW = [
+  { key: 'premium_tw',  num: '01', title: '開盤溢價率',     source: 'RA 反推 / 台股版' },
+  { key: 'candy_tw',    num: '02', title: 'CINDY 心法',     source: 'RA 親自反推 5 子式' },
+  { key: 'crash_tw',    num: '03', title: '大盤情緒',       source: 'TAIEX 漲跌幅' },
+  { key: 'cmoney_news', num: '04', title: '簡式選股',       source: 'CMoney 即時新聞' },
+  { key: 'chip_tw_v2',  num: '05', title: '集保大戶模型',   source: '集保盤後 + 大戶持股比' },
+];
+
 let userId = '';
 
 // ════════════════════════════════════════════════
@@ -394,29 +409,40 @@ function handleApiError(data) {
 }
 
 // ════════════════════════════════════════════════
+// 取 VOTE_DEFS:依後端回的 market 切換(v7.1 新增)
+// ════════════════════════════════════════════════
+function getVoteDefs(market) {
+  const m = String(market || 'US').toUpperCase();
+  return m === 'TW' ? VOTE_DEFS_TW : VOTE_DEFS_US;
+}
+
+// ════════════════════════════════════════════════
 // 渲染結果
 // ════════════════════════════════════════════════
 function renderResult(data) {
+  // 取 VOTE_DEFS
+  const voteDefs = getVoteDefs(data.market);
+
   // 1. 用量徽章
   if (data.usage) updateUsageTag(data.usage);
 
   // 2. 結論卡
   renderConclusion(data.votes.conclusion, data);
 
-  // 3. 持有期 + 槓桿標籤
-  renderHoldingMeta(data.votes.holdingPeriod, data.votes.leverageDecay);
+  // 3. 持有期 + 槓桿 + 市場標籤
+  renderHoldingMeta(data.votes.holdingPeriod, data.votes.leverageDecay, data.market);
 
   // 4. 槓桿耗損
   renderDecayPanel(data.votes.leverageDecay);
 
-  // 5. 6 式卡
-  renderVotes(data.votes);
+  // 5. 投票式卡片(依 market 顯示 5 或 6 式)
+  renderVotes(data.votes, voteDefs);
 
   // 6. 支撐位
   renderSupports(data.votes.support);
 
-  // 7. votes 標題動態化(看成功幾式)
-  const successCount = countValidVotes(data.votes);
+  // 7. 標題動態化(看成功幾式)
+  const successCount = countValidVotes(data.votes, voteDefs);
   document.getElementById('votesTitle').textContent =
     successCount + ' 套 AI 神器交叉分析';
 }
@@ -442,7 +468,6 @@ function renderConclusion(c, data) {
     return;
   }
 
-  // emoji + 顏色
   document.getElementById('signalEmoji').textContent = c.signalEmoji || '⚪';
   document.getElementById('signalLabel').textContent = c.signalLabel || '訊號不足';
 
@@ -455,12 +480,10 @@ function renderConclusion(c, data) {
   document.getElementById('signalCircle').style.borderColor = color;
   document.getElementById('signalLabel').style.color = color;
 
-  // 信心 bar
   const conf = (typeof c.confidence === 'number') ? c.confidence : 0;
   const bar = document.getElementById('signalBar');
   setTimeout(() => { bar.style.width = (conf * 100) + '%'; bar.style.background = color; }, 50);
 
-  // 細節
   const counts = c.counts || {};
   const detail = '看多 ' + (counts.bullish || 0) +
                  ' · 看空 ' + (counts.bearish || 0) +
@@ -469,7 +492,6 @@ function renderConclusion(c, data) {
                  '   |   權重 ' + (c.bullishWeight || 0) + ' vs ' + (c.bearishWeight || 0);
   document.getElementById('signalDetail').textContent = detail;
 
-  // 建議框
   const sb = document.getElementById('suggestionBox');
   sb.className = 'suggestion-box ' + sbClass;
   let html = '<div class="sb-title">建議操作</div>' + escapeHtml(c.suggestion || '--');
@@ -479,9 +501,16 @@ function renderConclusion(c, data) {
   sb.innerHTML = html;
 }
 
-function renderHoldingMeta(holdingPeriod, leverageDecay) {
+function renderHoldingMeta(holdingPeriod, leverageDecay, market) {
   const wrap = document.getElementById('holdingMeta');
   wrap.innerHTML = '';
+
+  // v7.1 新增:市場標籤
+  const m = String(market || 'US').toUpperCase();
+  const marketTag = document.createElement('div');
+  marketTag.className = 'meta-tag market-' + m.toLowerCase();
+  marketTag.textContent = (m === 'TW') ? '🇹🇼 台股 · 5 式分析' : '🇺🇸 美股 · 6 式分析';
+  wrap.appendChild(marketTag);
 
   if (holdingPeriod && holdingPeriod.label) {
     const tag = document.createElement('div');
@@ -528,20 +557,20 @@ function renderDecayPanel(decay) {
   panel.classList.add('show');
 }
 
-function countValidVotes(votes) {
+function countValidVotes(votes, voteDefs) {
   let n = 0;
-  for (const def of VOTE_DEFS) {
+  for (const def of voteDefs) {
     const v = votes[def.key];
     if (v && v.vote && v.vote !== 'abstain') n++;
   }
   return n;
 }
 
-function renderVotes(votes) {
+function renderVotes(votes, voteDefs) {
   const grid = document.getElementById('votesGrid');
   grid.innerHTML = '';
 
-  VOTE_DEFS.forEach((def, i) => {
+  voteDefs.forEach((def, i) => {
     const v = votes[def.key];
     const card = document.createElement('div');
     let voteValue = (v && v.vote) ? v.vote : 'abstain';
@@ -575,7 +604,6 @@ function renderVotes(votes) {
         '<div class="vote-conf-text">信心 ' + (conf * 100).toFixed(0) + '%</div>' +
       '</div>';
 
-    // 點擊看 raw
     card.onclick = () => {
       let detailMsg = '【' + def.title + '】\n\n';
       detailMsg += '判斷:' + stLabel + '\n';
@@ -645,14 +673,12 @@ function updateClock() {
   document.getElementById('clock').textContent = tw.toTimeString().slice(0, 8) + '  TW';
 }
 
-// 載入用量
 async function loadUsage() {
   if (!userId) return;
   try {
     const data = await callJsonp('usage', { id: userId }, 15000);
     if (data && data.ok) updateUsageTag(data);
   } catch(e) {
-    // 用量抓不到不影響主功能
     console.warn('usage load failed:', e.message);
   }
 }
@@ -672,8 +698,6 @@ window.onload = function() {
   }
 
   loadUsage();
-
-  // 預設不自動 analyze,等用戶按按鈕(避免 active 用戶白白消耗一次查詢額度)
 };
 </script>
 </body>
