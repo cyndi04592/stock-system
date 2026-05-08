@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>美股神器 · AI 分析</title>
+<title>美股神器 · AI 分析 v7.4</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -43,7 +43,6 @@ body { background:var(--bg); color:var(--white); font-family:'Noto Sans TC',sans
 .quick-tag.tw { border-color:rgba(245,166,35,0.3); color:#C8A060; }
 .quick-tag.tw:hover { color:var(--gold); border-color:var(--gold); }
 
-/* 結論卡 */
 .conclusion-panel { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:20px 24px; margin-bottom:20px; display:none; }
 .conclusion-panel.show { display:block; }
 .conclusion-layout { display:flex; gap:24px; align-items:center; flex-wrap:wrap; }
@@ -70,7 +69,6 @@ body { background:var(--bg); color:var(--white); font-family:'Noto Sans TC',sans
 .meta-tag.market-tw { border-color:var(--gold); color:var(--gold); }
 .meta-tag.market-us { border-color:var(--cyan); color:var(--cyan); }
 
-/* 投票卡片 */
 .section-title { font-family:'Orbitron',sans-serif; font-size:11px; color:var(--gold); letter-spacing:3px; margin-bottom:14px; display:flex; align-items:center; gap:10px; }
 .section-title::after { content:''; flex:1; height:1px; background:linear-gradient(90deg,var(--border),transparent); }
 
@@ -110,7 +108,6 @@ body { background:var(--bg); color:var(--white); font-family:'Noto Sans TC',sans
 .vote-card.v-neutral .vote-conf-bar-inner { background:var(--cyan); }
 .vote-conf-text { font-size:9px; font-family:'JetBrains Mono',monospace; color:var(--gray); }
 
-/* 支撐位面板 */
 .support-panel { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px 20px; margin-bottom:20px; display:none; }
 .support-panel.show { display:block; }
 .support-list { display:flex; flex-direction:column; gap:8px; margin-top:10px; }
@@ -121,25 +118,21 @@ body { background:var(--bg); color:var(--white); font-family:'Noto Sans TC',sans
 .support-distance { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--gray); min-width:55px; }
 .support-note { color:var(--lgray); font-size:11px; flex:1; }
 
-/* 槓桿耗損面板 */
 .decay-panel { background:rgba(255,107,53,0.05); border:1px solid rgba(255,107,53,0.2); border-radius:12px; padding:14px 18px; margin-bottom:20px; display:none; font-size:12px; line-height:1.7; color:#C87040; }
 .decay-panel.show { display:block; }
 .decay-title { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--orange); letter-spacing:1px; margin-bottom:6px; }
 
-/* 錯誤狀態 */
 .error-panel { background:rgba(255,51,102,0.06); border:1px solid rgba(255,51,102,0.3); border-radius:12px; padding:20px 24px; text-align:center; display:none; }
 .error-panel.show { display:block; }
 .error-emoji { font-size:32px; margin-bottom:10px; }
 .error-title { font-size:14px; font-weight:700; color:var(--red); margin-bottom:6px; }
 .error-msg { font-size:12px; color:var(--lgray); line-height:1.7; }
 
-/* Loading */
 .loading { text-align:center; padding:48px; display:none; }
 .loading.show { display:block; }
 .loading-text { font-family:'Orbitron',sans-serif; font-size:12px; color:var(--cyan); letter-spacing:2px; animation:blink 1s infinite; }
 @keyframes blink { 0%,100% { opacity:1 } 50% { opacity:0.3 } }
 
-/* v7.2 Toast 提示 */
 .toast { position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-20px); background:rgba(10,30,53,0.95); border:1px solid var(--gold); border-radius:10px; padding:12px 20px; color:var(--gold); font-size:12px; font-family:'JetBrains Mono',monospace; z-index:1000; opacity:0; transition:all 0.3s ease; pointer-events:none; box-shadow:0 4px 20px rgba(245,166,35,0.3); }
 .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 .toast-icon { display:inline-block; margin-right:8px; }
@@ -151,7 +144,6 @@ body { background:var(--bg); color:var(--white); font-family:'Noto Sans TC',sans
 <body>
 <div class="page">
 
-<!-- v7.2 Toast 提示(自動切換市場時用)-->
 <div class="toast" id="toast"></div>
 
 <div class="top-bar">
@@ -162,7 +154,6 @@ body { background:var(--bg); color:var(--white); font-family:'Noto Sans TC',sans
   </div>
 </div>
 
-<!-- 輸入 -->
 <div class="input-section">
   <div class="input-row">
     <div class="input-group">
@@ -192,22 +183,18 @@ body { background:var(--bg); color:var(--white); font-family:'Noto Sans TC',sans
   </div>
 </div>
 
-<!-- Loading -->
 <div class="loading" id="loading">
   <div class="loading-text">ANALYZING ...</div>
 </div>
 
-<!-- 錯誤 -->
 <div class="error-panel" id="errorPanel">
   <div class="error-emoji">⚠️</div>
   <div class="error-title" id="errorTitle">分析失敗</div>
   <div class="error-msg" id="errorMsg"></div>
 </div>
 
-<!-- 主體 -->
 <div id="resultArea" style="display:none">
 
-  <!-- 結論卡 -->
   <div class="conclusion-panel show" id="conclusionPanel">
     <div class="section-title">AI 交叉驗證結論</div>
     <div class="conclusion-layout">
@@ -226,17 +213,15 @@ body { background:var(--bg); color:var(--white); font-family:'Noto Sans TC',sans
     <div class="holding-meta" id="holdingMeta"></div>
   </div>
 
-  <!-- 槓桿耗損 -->
   <div class="decay-panel" id="decayPanel">
     <div class="decay-title">槓桿 ETF 耗損評估</div>
     <div id="decayContent"></div>
   </div>
 
-  <!-- 投票式卡片 -->
-  <div class="section-title" id="votesTitle">AI 神器交叉分析</div>
+  <!-- v7.4:section title 文字寫死避免渲染前看到「神器」字眼,等 renderResult 會用「N 套 AI 分析」覆蓋 -->
+  <div class="section-title" id="votesTitle">AI 分析</div>
   <div class="votes-grid" id="votesGrid"></div>
 
-  <!-- 支撐位 -->
   <div class="support-panel" id="supportPanel">
     <div class="section-title">主力支撐位偵測</div>
     <div class="support-list" id="supportList"></div>
@@ -248,22 +233,24 @@ body { background:var(--bg); color:var(--white); font-family:'Noto Sans TC',sans
 
 <script>
 // ════════════════════════════════════════════════
-// v7.3 配置(2026/05/08 第57輪 配對 09_api v3.9)
+// stock_12steps.html v7.4(2026/05/08 第58輪)
 // 改動歷程:
 //   v7.0:基礎版,有「6 套 AI 神器交叉分析」
 //   v7.1:美股/台股各自獨立 VOTE_DEFS,依後端回的 result.market 切換
-//        美股 6 式 = premium / candy / whale / crash / jiansrc / substack
-//        台股 5 式 = premium_tw / candy_tw / crash_tw / cmoney_news / chip_tw_v2
-//        跟 LINE Flex 卡的命名一致(CINDY 心法 / 集保大戶模型 / 簡式選股)
 //   v7.2:detectMarketFromSymbol() 自動偵測股票代號所屬市場
-//        規則:純數字 4-6 碼(可帶 L 尾巴) = TW / 純英文 1-5 碼 = US
-//        若用戶選的市場跟代號不符,自動切換 + 跳 toast 告知(不打斷流程)
-//   v7.3:純版本號升,跟 09_api v3.9 配對(後端加台股 holdingPeriod「短線 ~3D」)
-//        前端 renderHoldingMeta 邏輯 0 動,自動讀後端的 holdingPeriod 物件顯示
+//   v7.3:純版本號升,跟 09_api v3.9 配對(後端加台股 holdingPeriod)
+//   v7.4:RA 第58輪命名統一決策——產品定位是 AI 驅動,前台叫「AI 分析」
+//        將來會加港股投票老師,公式數量會增加,所以「N 式」要寫活
+//        改動:
+//          (1) <title> 加 v7.4
+//          (2) renderResult: '套 AI 神器交叉分析' → '套 AI 分析'(拿掉「神器」)
+//          (3) renderHoldingMeta: marketTag 寫死「5 式 / 6 式」改動態 X
+//          (4) analyze() toast: 切換市場提示寫死「5 式 / 6 式」改動態 X
+//          (5) section-title 預留文字「AI 神器交叉分析」改「AI 分析」(渲染前才看得到)
 // ════════════════════════════════════════════════
 const GAS_API = 'https://script.google.com/macros/s/AKfycbzjaRxJhYkqNIaJaFxvSiy0L120H0m0k7NY_Vc6IXIw70kO2SIvf3fOf26TnhApTgrg/exec';
 
-// 美股 6 式
+// 美股(目前 6 個,將來加港股老師會變多)
 const VOTE_DEFS_US = [
   { key: 'premium',  num: '01', title: '開盤溢價率',   source: '老練股神 / RA 反推' },
   { key: 'candy',    num: '02', title: 'CANDY 戰法',  source: 'CINDY 7 子式 / RA 反推' },
@@ -273,7 +260,7 @@ const VOTE_DEFS_US = [
   { key: 'substack', num: '06', title: '美股大叔',     source: 'Substack 即時郵件分析' },
 ];
 
-// 台股 5 式(命名跟 LINE Flex 卡一致)
+// 台股(目前 5 個)
 const VOTE_DEFS_TW = [
   { key: 'premium_tw',  num: '01', title: '開盤溢價率',     source: 'RA 反推 / 台股版' },
   { key: 'candy_tw',    num: '02', title: 'CINDY 心法',     source: 'RA 親自反推 5 子式' },
@@ -284,17 +271,11 @@ const VOTE_DEFS_TW = [
 
 let userId = '';
 
-// ════════════════════════════════════════════════
-// 取 userId(從 URL 參數)
-// ════════════════════════════════════════════════
 function getUserIdFromUrl() {
   const params = new URLSearchParams(window.location.search);
   return params.get('id') || params.get('userId') || '';
 }
 
-// ════════════════════════════════════════════════
-// JSONP helper(GAS 不支援 CORS,只能用 JSONP)
-// ════════════════════════════════════════════════
 function callJsonp(action, params, timeoutMs) {
   return new Promise((resolve, reject) => {
     const callbackName = 'cb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
@@ -329,9 +310,6 @@ function callJsonp(action, params, timeoutMs) {
   });
 }
 
-// ════════════════════════════════════════════════
-// 顯示 / 隱藏狀態
-// ════════════════════════════════════════════════
 function showLoading(show) {
   document.getElementById('loading').classList.toggle('show', !!show);
 }
@@ -348,9 +326,6 @@ function showResult() {
   document.getElementById('resultArea').style.display = 'block';
 }
 
-// ════════════════════════════════════════════════
-// 主流程:打 API
-// ════════════════════════════════════════════════
 async function analyze() {
   if (!userId) {
     showError('缺少使用者 ID', '請從 LINE Bot 點選分析按鈕進入,網址不能直接打開');
@@ -365,16 +340,16 @@ async function analyze() {
 
   let market = (document.getElementById('marketSelect').value || 'US').trim().toUpperCase();
 
-  // v7.2 市場自動偵測 + 防呆:從 symbol 樣子判斷實際市場,跟用戶選的不符就自動修正
+  // v7.2 市場自動偵測 + 防呆
+  // v7.4 toast 提示文字改動態 X(用 VOTE_DEFS_TW.length / VOTE_DEFS_US.length)
   const detected = detectMarketFromSymbol(ticker);
   if (detected && detected !== market) {
-    // 自動切換選擇器 + 跳 toast
     document.getElementById('marketSelect').value = detected;
     market = detected;
     if (detected === 'TW') {
-      showToast('🇹🇼 偵測到 ' + ticker + ' 是台股代號,已自動切換為台股 5 式分析');
+      showToast('🇹🇼 偵測到 ' + ticker + ' 是台股代號,已自動切換為台股 ' + VOTE_DEFS_TW.length + ' 套 AI 分析');
     } else {
-      showToast('🇺🇸 偵測到 ' + ticker + ' 是美股代號,已自動切換為美股 6 式分析');
+      showToast('🇺🇸 偵測到 ' + ticker + ' 是美股代號,已自動切換為美股 ' + VOTE_DEFS_US.length + ' 套 AI 分析');
     }
   }
 
@@ -435,43 +410,26 @@ function handleApiError(data) {
   }
 }
 
-// ════════════════════════════════════════════════
-// 取 VOTE_DEFS:依後端回的 market 切換(v7.1 新增)
-// ════════════════════════════════════════════════
 function getVoteDefs(market) {
   const m = String(market || 'US').toUpperCase();
   return m === 'TW' ? VOTE_DEFS_TW : VOTE_DEFS_US;
 }
 
-// ════════════════════════════════════════════════
-// 渲染結果
-// ════════════════════════════════════════════════
 function renderResult(data) {
-  // 取 VOTE_DEFS
   const voteDefs = getVoteDefs(data.market);
 
-  // 1. 用量徽章
   if (data.usage) updateUsageTag(data.usage);
 
-  // 2. 結論卡
   renderConclusion(data.votes.conclusion, data);
-
-  // 3. 持有期 + 槓桿 + 市場標籤
   renderHoldingMeta(data.votes.holdingPeriod, data.votes.leverageDecay, data.market);
-
-  // 4. 槓桿耗損
   renderDecayPanel(data.votes.leverageDecay);
-
-  // 5. 投票式卡片(依 market 顯示 5 或 6 式)
   renderVotes(data.votes, voteDefs);
-
-  // 6. 支撐位
   renderSupports(data.votes.support);
 
-  // 7. 標題動態化(看成功幾式)
+  // v7.4:標題改「N 套 AI 分析」(拿掉「神器」兩字)
   const successCount = countValidVotes(data.votes, voteDefs);
   document.getElementById('votesTitle').textContent =
-    successCount + ' 套 AI 神器交叉分析';
+    successCount + ' 套 AI 分析';
 }
 
 function updateUsageTag(usage) {
@@ -532,11 +490,15 @@ function renderHoldingMeta(holdingPeriod, leverageDecay, market) {
   const wrap = document.getElementById('holdingMeta');
   wrap.innerHTML = '';
 
-  // v7.1 新增:市場標籤
+  // v7.4:marketTag 文字依 VOTE_DEFS.length 動態算,不再寫死「5 式 / 6 式」
   const m = String(market || 'US').toUpperCase();
   const marketTag = document.createElement('div');
   marketTag.className = 'meta-tag market-' + m.toLowerCase();
-  marketTag.textContent = (m === 'TW') ? '🇹🇼 台股 · 5 式分析' : '🇺🇸 美股 · 6 式分析';
+  if (m === 'TW') {
+    marketTag.textContent = '🇹🇼 台股 · ' + VOTE_DEFS_TW.length + ' 套 AI 分析';
+  } else {
+    marketTag.textContent = '🇺🇸 美股 · ' + VOTE_DEFS_US.length + ' 套 AI 分析';
+  }
   wrap.appendChild(marketTag);
 
   if (holdingPeriod && holdingPeriod.label) {
@@ -675,9 +637,6 @@ function renderSupports(support) {
   panel.classList.add('show');
 }
 
-// ════════════════════════════════════════════════
-// 工具
-// ════════════════════════════════════════════════
 function escapeHtml(s) {
   if (s === null || s === undefined) return '';
   return String(s)
@@ -688,19 +647,14 @@ function escapeHtml(s) {
     .replace(/'/g, '&#39;');
 }
 
-// v7.2:從股票代號樣子推測市場(跟後端 isTwStockBySymbol_ 邏輯一致)
 function detectMarketFromSymbol(sym) {
   if (!sym) return null;
   const s = String(sym).trim().toUpperCase();
-  // 純數字 4-6 碼,可能尾巴帶 L = 台股(0050/2330/6257/00631L)
   if (/^\d{4,6}L?(\.TW)?$/.test(s)) return 'TW';
-  // 純英文 1-5 碼 = 美股(F/TSM/NVDA/ORCL/SMUP)
   if (/^[A-Z]{1,5}$/.test(s)) return 'US';
-  // 其他(BRK.B/BRK-A 等特殊)放過,讓後端判
   return null;
 }
 
-// v7.2:Toast 提示(3 秒淡出)
 let _toastTimer = null;
 function showToast(msg, durationMs) {
   const el = document.getElementById('toast');
@@ -735,9 +689,6 @@ async function loadUsage() {
   }
 }
 
-// ════════════════════════════════════════════════
-// 啟動
-// ════════════════════════════════════════════════
 window.onload = function() {
   userId = getUserIdFromUrl();
   updateClock();
