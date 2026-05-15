@@ -1,17 +1,19 @@
 <!DOCTYPE html>
 <!--
 ═══════════════════════════════════════════════════════════
-  美股神器 - 上傳持股 v2.0(GitHub Pages 版)
+  美股神器 - 上傳持股 v2.1(R80 P0)
   
-  v2.0 (2026/05/05 第四十二輪 結案版):
-   ✅ 從 GAS 內嵌 HTML 搬到 GitHub Pages,真滿版
-   ✅ 沒有 Google 母版限制(那條藍色橫條徹底消失)
-   ✅ form POST 傳 base64 給 GAS doPost(JSONP 不能傳大 data)
-   ✅ 用 requestId + JSONP poll 拿結果(CORS 死路繞過)
-   ✅ USER_ID 從 URL ?id= 自動帶,不再讓用戶手填(防偽造)
-   ✅ 沒有 demo / fallback / 寫死資料(防 ORCX/SMUP 大屠殺)
-   ✅ 識別後可編輯(代號 / 股數 / 均價 / 市場),確認再存
-   ✅ 設計風格對齊 stock_12steps v7.0(藍黑霓虹 + Orbitron)
+  v2.1 (2026/05/15 R80 P0 雙入口上傳):
+   🆕 讀 URL ?mode=add → 切換到「手動加碼模式」
+   🆕 加碼模式:標題改、隱藏截圖識別 tab、強制單筆輸入
+   🆕 加碼模式送出 → form POST 帶 mode=add_only(後端走加權平均)
+   🆕 模式切換橫幅(讓用戶清楚知道在哪個模式)
+   ✅ 保持 v2.0 所有舊邏輯(覆蓋模式預設行為不變)
+  
+  URL 參數:
+   ?id=Uxxx           USER_ID
+   ?mode=replace      (預設)覆蓋全部模式 — 同 v2.0
+   ?mode=add          R80 新增 — 加碼/新增單一股票模式
 ═══════════════════════════════════════════════════════════
 -->
 <html lang="zh-TW">
@@ -64,24 +66,40 @@ body::before{
   z-index:1;
 }
 
-/* Logo */
 .logo{text-align:center;margin-bottom:22px;}
 .logo-title{
   font-family:'Orbitron',sans-serif;
-  font-size:22px;
-  font-weight:900;
-  color:var(--gold);
-  letter-spacing:4px;
+  font-size:22px;font-weight:900;color:var(--gold);letter-spacing:4px;
 }
 .logo-sub{
-  font-size:10px;
-  color:var(--gray);
-  font-family:'JetBrains Mono',monospace;
-  letter-spacing:3px;
-  margin-top:6px;
+  font-size:10px;color:var(--gray);font-family:'JetBrains Mono',monospace;
+  letter-spacing:3px;margin-top:6px;
 }
 
-/* User ID 顯示條 */
+/* === R80 v2.1 新增:模式橫幅 === */
+.mode-banner{
+  background:linear-gradient(135deg, rgba(0,255,136,0.15), rgba(0,255,136,0.05));
+  border:1px solid rgba(0,255,136,0.4);
+  border-radius:10px;
+  padding:10px 14px;
+  margin-bottom:14px;
+  text-align:center;
+}
+.mode-banner.replace-mode{
+  background:linear-gradient(135deg, rgba(0,212,255,0.15), rgba(0,212,255,0.05));
+  border-color:rgba(0,212,255,0.4);
+}
+.mode-banner-title{
+  font-size:13px;font-weight:700;
+  color:var(--green);
+  margin-bottom:4px;
+  font-family:'Noto Sans TC',sans-serif;
+}
+.mode-banner.replace-mode .mode-banner-title{color:var(--cyan);}
+.mode-banner-desc{
+  font-size:11px;color:var(--gray-2);line-height:1.5;
+}
+
 .uid-bar{
   background:var(--card);
   border:1px solid var(--border);
@@ -92,18 +110,14 @@ body::before{
   color:var(--gray-2);
   font-family:'JetBrains Mono',monospace;
   word-break:break-all;
-  display:flex;
-  align-items:center;
-  gap:7px;
+  display:flex;align-items:center;gap:7px;
 }
 .uid-bar.no-uid{
   border-color:rgba(255,51,102,0.25);
-  color:var(--red);
-  background:rgba(255,51,102,0.04);
+  color:var(--red);background:rgba(255,51,102,0.04);
 }
 .uid-bar b{color:var(--gold);flex-shrink:0;}
 
-/* 主卡 */
 .main-card{
   background:var(--card);
   border:1px solid var(--border);
@@ -113,32 +127,22 @@ body::before{
 }
 .card-title{
   font-family:'Orbitron',sans-serif;
-  font-size:13px;
-  color:var(--gold);
-  letter-spacing:2px;
-  margin-bottom:6px;
+  font-size:13px;color:var(--gold);
+  letter-spacing:2px;margin-bottom:6px;
 }
 .card-desc{
-  font-size:12px;
-  color:var(--gray);
-  line-height:1.7;
-  margin-bottom:18px;
+  font-size:12px;color:var(--gray);line-height:1.7;margin-bottom:18px;
 }
 
-/* Tab */
 .tabs{display:flex;gap:6px;margin-bottom:16px;}
 .tabs button{
-  flex:1;
-  padding:10px;
+  flex:1;padding:10px;
   background:rgba(0,0,0,0.2);
   color:var(--gray-2);
   border:1px solid var(--border);
-  border-radius:10px;
-  cursor:pointer;
-  font-size:12px;
-  font-family:'Noto Sans TC',sans-serif;
-  font-weight:700;
-  transition:all 0.2s;
+  border-radius:10px;cursor:pointer;
+  font-size:12px;font-family:'Noto Sans TC',sans-serif;
+  font-weight:700;transition:all 0.2s;
 }
 .tabs button.active{
   background:rgba(245,166,35,0.12);
@@ -148,41 +152,27 @@ body::before{
 .tab-section{display:none;}
 .tab-section.active{display:block;}
 
-/* 上傳區 */
 .upload-zone{
   border:2px dashed var(--border-2);
   border-radius:12px;
   padding:30px 16px;
-  text-align:center;
-  cursor:pointer;
-  transition:all 0.3s;
-  position:relative;
+  text-align:center;cursor:pointer;
+  transition:all 0.3s;position:relative;
   background:rgba(0,212,255,0.02);
 }
 .upload-zone:hover,.upload-zone.dragover{
   border-color:var(--cyan);
   background:rgba(0,212,255,0.06);
 }
-.upload-zone input{
-  position:absolute;
-  inset:0;
-  opacity:0;
-  cursor:pointer;
-}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;}
 .upload-icon{
-  width:48px;
-  height:48px;
-  border-radius:12px;
+  width:48px;height:48px;border-radius:12px;
   background:rgba(0,212,255,0.1);
   border:1px solid rgba(0,212,255,0.2);
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  display:flex;align-items:center;justify-content:center;
   margin:0 auto 12px;
-  font-size:22px;
-  color:var(--cyan);
-  font-family:'Orbitron',sans-serif;
-  font-weight:900;
+  font-size:22px;color:var(--cyan);
+  font-family:'Orbitron',sans-serif;font-weight:900;
 }
 .upload-title{font-size:14px;font-weight:700;color:var(--white);margin-bottom:4px;}
 .upload-hint{font-size:11px;color:var(--gray);font-family:'JetBrains Mono',monospace;}
@@ -191,100 +181,68 @@ body::before{
 .preview-box img{width:100%;border-radius:10px;display:block;}
 .preview-remove{
   position:absolute;top:8px;right:8px;
-  width:30px;height:30px;
-  border-radius:50%;
+  width:30px;height:30px;border-radius:50%;
   background:rgba(255,51,102,0.85);
   border:none;cursor:pointer;color:white;
   font-size:16px;font-weight:700;
   display:flex;align-items:center;justify-content:center;
 }
 
-/* 按鈕 */
 .btn-primary{
-  width:100%;
-  margin-top:14px;
-  padding:13px;
+  width:100%;margin-top:14px;padding:13px;
   background:linear-gradient(135deg,var(--cyan),#0099BB);
   border:none;border-radius:11px;
-  color:#020A14;font-weight:900;font-size:14px;
-  cursor:pointer;
-  font-family:'Orbitron',sans-serif;
-  letter-spacing:1px;
-  transition:all 0.2s;
+  color:#020A14;font-weight:900;font-size:14px;cursor:pointer;
+  font-family:'Orbitron',sans-serif;letter-spacing:1px;transition:all 0.2s;
 }
 .btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,212,255,0.3);}
 .btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
 .btn-confirm{
-  width:100%;
-  margin-top:12px;
-  padding:13px;
+  width:100%;margin-top:12px;padding:13px;
   background:linear-gradient(135deg,var(--green),#00BB66);
   border:none;border-radius:11px;
-  color:#020A14;font-weight:900;font-size:14px;
-  cursor:pointer;
-  font-family:'Orbitron',sans-serif;
-  letter-spacing:1px;
-  transition:all 0.2s;
+  color:#020A14;font-weight:900;font-size:14px;cursor:pointer;
+  font-family:'Orbitron',sans-serif;letter-spacing:1px;transition:all 0.2s;
 }
 .btn-confirm:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,255,136,0.3);}
 .btn-confirm:disabled{opacity:0.5;cursor:not-allowed;}
 .btn-ghost{
-  width:100%;
-  margin-top:10px;
-  padding:11px;
+  width:100%;margin-top:10px;padding:11px;
   background:rgba(245,166,35,0.1);
   border:1px solid rgba(245,166,35,0.3);
   border-radius:10px;
-  color:var(--gold);font-weight:700;font-size:12px;
-  cursor:pointer;
-  font-family:'Noto Sans TC',sans-serif;
-  transition:all 0.2s;
+  color:var(--gold);font-weight:700;font-size:12px;cursor:pointer;
+  font-family:'Noto Sans TC',sans-serif;transition:all 0.2s;
 }
 .btn-ghost:hover{background:rgba(245,166,35,0.2);}
 
-/* 進度 */
 .progress{display:none;margin-top:12px;}
-.progress-bar{
-  height:3px;
-  background:rgba(255,255,255,0.05);
-  border-radius:2px;
-  overflow:hidden;
-}
+.progress-bar{height:3px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;}
 .progress-fill{
-  height:100%;
-  background:linear-gradient(90deg,var(--cyan),var(--gold));
-  border-radius:2px;
-  transition:width 0.5s ease;
-  width:0%;
+  height:100%;background:linear-gradient(90deg,var(--cyan),var(--gold));
+  border-radius:2px;transition:width 0.5s ease;width:0%;
 }
 .progress-text{
-  font-size:11px;color:var(--cyan);
-  font-family:'JetBrains Mono',monospace;
+  font-size:11px;color:var(--cyan);font-family:'JetBrains Mono',monospace;
   text-align:center;margin-top:7px;
 }
 
-/* 識別結果列表 — RWD */
 .holding-list-header{display:none;}
 @media(min-width:520px){
   .holding-list-header{
     display:grid;
     grid-template-columns:1.4fr 1fr 1.2fr 0.8fr 38px;
-    gap:6px;
-    padding:0 4px 6px;
-    font-size:9px;
-    color:var(--gray-2);
+    gap:6px;padding:0 4px 6px;
+    font-size:9px;color:var(--gray-2);
     font-family:'JetBrains Mono',monospace;
-    letter-spacing:1px;
-    text-transform:uppercase;
+    letter-spacing:1px;text-transform:uppercase;
   }
 }
 
 .holding-row{
   display:grid;
   grid-template-columns:1fr auto;
-  gap:8px;
-  margin-bottom:10px;
-  padding:10px;
+  gap:8px;margin-bottom:10px;padding:10px;
   background:rgba(0,0,0,0.3);
   border:1px solid var(--border);
   border-radius:10px;
@@ -293,43 +251,28 @@ body::before{
   grid-column:1 / 2;
   background:rgba(0,0,0,0.4);
   border:1px solid var(--border);
-  border-radius:6px;
-  padding:9px 10px;
-  color:var(--gold);
-  font-size:13px;
-  font-weight:700;
-  font-family:'JetBrains Mono',monospace;
-  letter-spacing:1px;
-  width:100%;
+  border-radius:6px;padding:9px 10px;
+  color:var(--gold);font-size:13px;font-weight:700;
+  font-family:'JetBrains Mono',monospace;letter-spacing:1px;width:100%;
 }
 .holding-row .ticker-input::placeholder{font-weight:400;letter-spacing:0;color:var(--gray);}
 .holding-row .del-btn{
   grid-column:2 / 3;
   background:rgba(255,51,102,0.15);
   border:1px solid rgba(255,51,102,0.3);
-  border-radius:6px;
-  color:var(--red);
-  cursor:pointer;
-  font-size:14px;
-  font-weight:700;
-  width:38px;
-  height:36px;
+  border-radius:6px;color:var(--red);cursor:pointer;
+  font-size:14px;font-weight:700;width:38px;height:36px;
 }
 .holding-row .row-fields{
   grid-column:1 / 3;
-  display:grid;
-  grid-template-columns:1fr 1fr 0.8fr;
-  gap:6px;
+  display:grid;grid-template-columns:1fr 1fr 0.8fr;gap:6px;
 }
 .holding-row .row-fields input,.holding-row .row-fields select{
   background:rgba(0,0,0,0.4);
   border:1px solid var(--border);
-  border-radius:6px;
-  padding:8px 9px;
-  color:var(--white);
-  font-size:12px;
-  font-family:'JetBrains Mono',monospace;
-  width:100%;
+  border-radius:6px;padding:8px 9px;
+  color:var(--white);font-size:12px;
+  font-family:'JetBrains Mono',monospace;width:100%;
 }
 .holding-row input:focus,.holding-row select:focus{outline:none;border-color:var(--cyan);}
 
@@ -340,95 +283,63 @@ body::before{
   .holding-row .del-btn{grid-column:5 / 6;}
 }
 
-/* 訊息 */
 .msg-error{
-  display:none;
-  padding:10px 12px;
+  display:none;padding:10px 12px;
   background:rgba(255,51,102,0.08);
   border:1px solid rgba(255,51,102,0.25);
-  border-radius:8px;
-  font-size:12px;
-  color:#FF6688;
-  margin-top:12px;
-  text-align:center;
-  line-height:1.6;
-  white-space:pre-line;
+  border-radius:8px;font-size:12px;color:#FF6688;
+  margin-top:12px;text-align:center;line-height:1.6;white-space:pre-line;
 }
 .msg-warn{
-  display:none;
-  padding:10px 12px;
+  display:none;padding:10px 12px;
   background:rgba(255,107,53,0.08);
   border:1px solid rgba(255,107,53,0.25);
-  border-radius:8px;
-  font-size:12px;
-  color:#FF9966;
-  margin-top:12px;
-  line-height:1.6;
+  border-radius:8px;font-size:12px;color:#FF9966;
+  margin-top:12px;line-height:1.6;
 }
 
-/* 成功卡 */
 .success-card{
-  display:none;
-  text-align:center;
-  padding:32px 18px;
+  display:none;text-align:center;padding:32px 18px;
   background:var(--card);
   border:1px solid rgba(0,255,136,0.25);
-  border-radius:18px;
-  animation:fadeUp 0.4s ease;
+  border-radius:18px;animation:fadeUp 0.4s ease;
 }
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .success-icon{
-  width:56px;height:56px;
-  border-radius:50%;
+  width:56px;height:56px;border-radius:50%;
   background:rgba(0,255,136,0.12);
   border:2px solid rgba(0,255,136,0.35);
   display:flex;align-items:center;justify-content:center;
-  font-size:24px;
-  margin:0 auto 12px;
-  color:var(--green);
-  font-family:'Orbitron',sans-serif;
-  font-weight:900;
+  font-size:24px;margin:0 auto 12px;color:var(--green);
+  font-family:'Orbitron',sans-serif;font-weight:900;
 }
 .success-title{
-  font-family:'Orbitron',sans-serif;
-  font-size:16px;color:var(--green);
+  font-family:'Orbitron',sans-serif;font-size:16px;color:var(--green);
   margin-bottom:8px;letter-spacing:2px;
 }
 .success-desc{font-size:12px;color:var(--gray);line-height:1.8;}
 .success-summary{
   background:rgba(0,255,136,0.04);
   border:1px solid rgba(0,255,136,0.15);
-  border-radius:8px;
-  padding:10px 12px;
-  margin-top:14px;
-  font-size:11px;
-  color:var(--white);
+  border-radius:8px;padding:10px 12px;margin-top:14px;
+  font-size:11px;color:var(--white);
   font-family:'JetBrains Mono',monospace;
-  text-align:left;
-  max-height:140px;
-  overflow-y:auto;
+  text-align:left;max-height:140px;overflow-y:auto;
 }
 .success-summary div{margin:3px 0;}
 
-/* Footer */
 .footer{
-  text-align:center;
-  font-size:10px;color:var(--gray);
+  text-align:center;font-size:10px;color:var(--gray);
   font-family:'JetBrains Mono',monospace;
-  margin-top:20px;
-  letter-spacing:1px;
+  margin-top:20px;letter-spacing:1px;
 }
 
-/* spinner */
 .spinner{
-  display:inline-block;
-  width:11px;height:11px;
+  display:inline-block;width:11px;height:11px;
   border:2px solid rgba(0,212,255,0.2);
-  border-top-color:var(--cyan);
-  border-radius:50%;
+  border-top-color:var(--cyan);border-radius:50%;
   animation:spin 0.8s linear infinite;
-  vertical-align:middle;
-  margin-right:6px;
+  vertical-align:middle;margin-right:6px;
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 </style>
@@ -441,6 +352,12 @@ body::before{
     <div class="logo-sub">STOCK SYSTEM v5.0</div>
   </div>
 
+  <!-- R80 v2.1 新增:模式橫幅(JS 動態顯示) -->
+  <div class="mode-banner" id="modeBanner" style="display:none">
+    <div class="mode-banner-title" id="modeBannerTitle"></div>
+    <div class="mode-banner-desc" id="modeBannerDesc"></div>
+  </div>
+
   <div class="uid-bar" id="uidBar">
     <b>USER ID</b>
     <span id="uidDisplay">(載入中...)</span>
@@ -448,10 +365,10 @@ body::before{
 
   <!-- 主卡 -->
   <div class="main-card" id="mainCard">
-    <div class="card-title">設定你的持倉</div>
-    <div class="card-desc">上傳券商 App 的庫存截圖,AI 自動識別你的持股。每天早上 8:30 推播個人化分析。</div>
+    <div class="card-title" id="mainCardTitle">設定你的持倉</div>
+    <div class="card-desc" id="mainCardDesc">上傳券商 App 的庫存截圖,AI 自動識別你的持股。每天早上 8:30 推播個人化分析。</div>
 
-    <div class="tabs">
+    <div class="tabs" id="tabsBar">
       <button class="active" id="tabVision" onclick="switchTab('vision')">📷 截圖識別</button>
       <button id="tabManual" onclick="switchTab('manual')">✏️ 手動輸入</button>
     </div>
@@ -486,8 +403,8 @@ body::before{
         <div>代號</div><div>股數</div><div>均價</div><div>市場</div><div></div>
       </div>
       <div id="manualRows"></div>
-      <button class="btn-ghost" onclick="addManualRow()">+ 加一檔</button>
-      <button class="btn-confirm" onclick="saveManualHoldingsForm()">💾 儲存全部</button>
+      <button class="btn-ghost" id="btnAddManualRow" onclick="addManualRow()">+ 加一檔</button>
+      <button class="btn-confirm" id="btnSaveManual" onclick="saveManualHoldingsForm()">💾 儲存全部</button>
       <div class="msg-error" id="manualError"></div>
     </div>
   </div>
@@ -512,8 +429,8 @@ body::before{
   <!-- 成功卡 -->
   <div class="success-card" id="successCard">
     <div class="success-icon">✓</div>
-    <div class="success-title">設定完成</div>
-    <div class="success-desc">
+    <div class="success-title" id="successTitle">設定完成</div>
+    <div class="success-desc" id="successDesc">
       持倉已成功儲存<br>
       每天早上 8:30 會推播個人化分析<br>
       可關閉此頁回到 LINE
@@ -521,10 +438,10 @@ body::before{
     <div class="success-summary" id="successSummary"></div>
   </div>
 
-  <div class="footer">美股神器 STOCK SYSTEM · upload.html v2.0</div>
+  <div class="footer">美股神器 STOCK SYSTEM · upload.html v2.1 (R80 P0)</div>
 </div>
 
-<!-- 隱藏的 form + iframe(form POST 上傳大 base64 給 GAS doPost) -->
+<!-- 隱藏的 form + iframe -->
 <form id="hiddenForm" target="hiddenFrame" method="POST" enctype="application/x-www-form-urlencoded" style="display:none">
   <input type="hidden" name="action" id="formAction">
   <input type="hidden" name="userId" id="formUserId">
@@ -532,6 +449,7 @@ body::before{
   <input type="hidden" name="image" id="formImage">
   <input type="hidden" name="mimeType" id="formMimeType">
   <input type="hidden" name="holdings" id="formHoldings">
+  <input type="hidden" name="mode" id="formMode">
 </form>
 <iframe name="hiddenFrame" style="display:none" sandbox="allow-same-origin"></iframe>
 
@@ -540,19 +458,73 @@ body::before{
 // 設定
 // ════════════════════════════════════════════════
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbzjaRxJhYkqNIaJaFxvSiy0L120H0m0k7NY_Vc6IXIw70kO2SIvf3fOf26TnhApTgrg/exec';
-const POLL_INTERVAL_MS = 1500;       // 每 1.5 秒輪詢一次
-const POLL_TIMEOUT_MS  = 60000;      // 60 秒總超時
+const POLL_INTERVAL_MS = 1500;
+const POLL_TIMEOUT_MS  = 60000;
 
 // ════════════════════════════════════════════════
-// 啟動 — 從 URL 抓 USER_ID
+// R80 v2.1 新增:URL 模式偵測
 // ════════════════════════════════════════════════
 function getUrlParam(key){
   return new URLSearchParams(window.location.search).get(key) || '';
 }
 const USER_ID = getUrlParam('id');
+const URL_MODE = (getUrlParam('mode') || 'replace').toLowerCase();
+const IS_ADD_MODE = (URL_MODE === 'add');
+
 let selectedFile = null;
 
+// ════════════════════════════════════════════════
+// 初始化模式 UI(R80 v2.1)
+// ════════════════════════════════════════════════
+(function initMode(){
+  const banner = document.getElementById('modeBanner');
+  const bannerTitle = document.getElementById('modeBannerTitle');
+  const bannerDesc = document.getElementById('modeBannerDesc');
+  const mainTitle = document.getElementById('mainCardTitle');
+  const mainDesc = document.getElementById('mainCardDesc');
+  const tabsBar = document.getElementById('tabsBar');
+  const visionSection = document.getElementById('visionSection');
+  const manualSection = document.getElementById('manualSection');
+  const btnAddRow = document.getElementById('btnAddManualRow');
+  const btnSave = document.getElementById('btnSaveManual');
+
+  if(IS_ADD_MODE){
+    // ── 加碼模式 ──
+    banner.style.display = 'block';
+    banner.classList.remove('replace-mode');
+    bannerTitle.innerHTML = '➕ 手動加碼/新增單一股票';
+    bannerDesc.innerHTML = '同 ticker 自動加權平均(舊 50股@200 + 新 100股@210 = 150股@206.67)<br>新 ticker 直接追加,不影響其他持股';
+
+    mainTitle.textContent = '加碼明細';
+    mainDesc.textContent = '請填寫一檔股票(代號、股數、均價、市場)。確認後送出。';
+
+    // 隱藏截圖識別 tab,只顯示手動輸入
+    tabsBar.style.display = 'none';
+    visionSection.classList.remove('active');
+    manualSection.classList.add('active');
+
+    // 改按鈕文字
+    btnAddRow.style.display = 'none';  // 不能多列
+    btnSave.textContent = '➕ 確認加碼';
+
+    // 預設加 1 列
+    addManualRow();
+  } else {
+    // ── 覆蓋模式(預設,= v2.0 行為)──
+    banner.style.display = 'block';
+    banner.classList.add('replace-mode');
+    bannerTitle.innerHTML = '📷 覆蓋全部持倉';
+    bannerDesc.innerHTML = '請上傳券商 App 的「總持倉」截圖<br>系統會以截圖內容完整覆蓋你的持股紀錄';
+
+    // 預設加 2 列(同 v2.0)
+    addManualRow();
+    addManualRow();
+  }
+})();
+
+// ════════════════════════════════════════════════
 // 顯示 USER_ID
+// ════════════════════════════════════════════════
 (function initUid(){
   const bar = document.getElementById('uidBar');
   const disp = document.getElementById('uidDisplay');
@@ -565,9 +537,10 @@ let selectedFile = null;
 })();
 
 // ════════════════════════════════════════════════
-// Tab 切換
+// Tab 切換(僅覆蓋模式可用,加碼模式已隱藏 tab)
 // ════════════════════════════════════════════════
 function switchTab(name){
+  if(IS_ADD_MODE) return;  // 加碼模式不允許切換
   document.getElementById('tabVision').classList.toggle('active', name === 'vision');
   document.getElementById('tabManual').classList.toggle('active', name === 'manual');
   document.getElementById('visionSection').classList.toggle('active', name === 'vision');
@@ -575,7 +548,7 @@ function switchTab(name){
 }
 
 // ════════════════════════════════════════════════
-// 上傳區
+// 上傳區(僅覆蓋模式生效,加碼模式 visionSection 已隱藏)
 // ════════════════════════════════════════════════
 const fileInput  = document.getElementById('fileInput');
 const uploadZone = document.getElementById('uploadZone');
@@ -596,7 +569,6 @@ function processFile(file){
     showVisionError('請上傳圖片檔(JPG / PNG / WEBP)');
     return;
   }
-  // 檔案大小檢查(>5MB 警告)
   if(file.size > 5 * 1024 * 1024){
     showVisionError('圖片太大('+ Math.round(file.size/1024/1024) +'MB),請壓縮到 5MB 以下');
     return;
@@ -618,9 +590,6 @@ function removeImage(){
   hideError('visionError');
 }
 
-// ════════════════════════════════════════════════
-// 訊息工具
-// ════════════════════════════════════════════════
 function showVisionError(msg){
   const el = document.getElementById('visionError');
   el.textContent = msg;
@@ -633,16 +602,10 @@ function setProgress(pct, text){
     pct < 100 ? '<span class="spinner"></span>' + text : text;
 }
 
-// ════════════════════════════════════════════════
-// requestId 產生器
-// ════════════════════════════════════════════════
 function genRequestId(){
   return 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2,10);
 }
 
-// ════════════════════════════════════════════════
-// JSONP 工具(輪詢結果用)
-// ════════════════════════════════════════════════
 function jsonp(url, params, timeout){
   return new Promise((resolve, reject) => {
     const cbName = 'cb_' + Math.random().toString(36).slice(2);
@@ -665,11 +628,6 @@ function jsonp(url, params, timeout){
   });
 }
 
-// ════════════════════════════════════════════════
-// 輪詢 GAS 等結果(form POST 後用)
-// 後端會把結果存進 CacheService(key=requestId,5 分鐘)
-// 前端每 1.5 秒 JSONP poll 一次,直到拿到結果或超時
-// ════════════════════════════════════════════════
 async function pollResult(requestId){
   const start = Date.now();
   while(Date.now() - start < POLL_TIMEOUT_MS){
@@ -682,16 +640,11 @@ async function pollResult(requestId){
       if(data && data.ready){
         return data.result;
       }
-    } catch(e){
-      // poll 暫時失敗就繼續(可能是網路抖)
-    }
+    } catch(e){}
   }
   throw new Error('等待結果超時(' + (POLL_TIMEOUT_MS/1000) + ' 秒),請重試');
 }
 
-// ════════════════════════════════════════════════
-// 開始識別 — form POST + iframe + JSONP 輪詢
-// ════════════════════════════════════════════════
 async function startRecognize(){
   if(!USER_ID){
     showVisionError('沒有 User ID,無法識別。\n請從 LINE「上傳」按鈕進入此頁。');
@@ -710,11 +663,9 @@ async function startRecognize(){
   setProgress(15, '讀取截圖中...');
 
   try {
-    // Step 1:檔案轉 base64
     const base64 = await fileToBase64(selectedFile);
     setProgress(35, '上傳截圖到後端...');
 
-    // Step 2:form POST 送出
     const requestId = genRequestId();
     submitForm({
       action:    'recognize',
@@ -726,7 +677,6 @@ async function startRecognize(){
 
     setProgress(55, 'AI 識別中(約 10-20 秒)...');
 
-    // Step 3:輪詢結果
     const result = await pollResult(requestId);
 
     setProgress(100, '識別完成');
@@ -734,7 +684,6 @@ async function startRecognize(){
     btn.disabled = false;
     btn.textContent = '開始識別持倉';
 
-    // 處理結果
     if(!result || result.ok === false){
       const errMsg = (result && (result.message || result.error)) || '識別失敗';
       showVisionError('⚠️ ' + errMsg);
@@ -771,7 +720,7 @@ function fileToBase64(file){
 }
 
 // ════════════════════════════════════════════════
-// 隱藏 form 提交(關鍵:繞過 CORS)
+// 隱藏 form 提交(R80 v2.1:加 mode 參數)
 // ════════════════════════════════════════════════
 function submitForm(fields){
   const form = document.getElementById('hiddenForm');
@@ -782,12 +731,10 @@ function submitForm(fields){
   document.getElementById('formImage').value      = fields.image      || '';
   document.getElementById('formMimeType').value   = fields.mimeType   || '';
   document.getElementById('formHoldings').value   = fields.holdings   || '';
+  document.getElementById('formMode').value       = fields.mode       || '';  // R80 v2.1
   form.submit();
 }
 
-// ════════════════════════════════════════════════
-// 顯示識別結果(可編輯)
-// ════════════════════════════════════════════════
 function showRecognizedHoldings(holdings){
   document.getElementById('mainCard').style.display = 'none';
   document.getElementById('resultCard').style.display = 'block';
@@ -796,12 +743,10 @@ function showRecognizedHoldings(holdings){
   const container = document.getElementById('resultRows');
   container.innerHTML = '';
 
-  // 計算 ❓ 開頭的(冷門股 / 未識別)
   const unknownCount = holdings.filter(h =>
     String(h.ticker || '').indexOf('❓') === 0
   ).length;
 
-  // 顯示警告(如果有 ❓)
   const warnEl = document.getElementById('resultWarn');
   if(unknownCount > 0){
     warnEl.innerHTML =
@@ -822,7 +767,6 @@ function addResultRow(prefill){
   const row = document.createElement('div');
   row.className = 'holding-row';
   let ticker  = (prefill && prefill.ticker)   ? String(prefill.ticker).toUpperCase() : '';
-  // 如果是 ❓ 開頭就清空,讓用戶填
   if(ticker.indexOf('❓') === 0) ticker = '';
   const shares  = (prefill && prefill.shares)   ? prefill.shares   : '';
   const avg     = (prefill && prefill.avgPrice) ? prefill.avgPrice : '';
@@ -848,9 +792,6 @@ function escapeHTML(s){
   })[c]);
 }
 
-// ════════════════════════════════════════════════
-// 確認儲存(識別結果)
-// ════════════════════════════════════════════════
 async function saveRecognizedHoldings(){
   const rows = document.querySelectorAll('#resultRows .holding-row');
   const holdings = collectHoldingsFromRows(rows);
@@ -862,25 +803,35 @@ async function saveRecognizedHoldings(){
     return;
   }
 
-  await doSaveHoldings(holdings, 'resultError');
+  // 識別結果儲存 → 永遠走 replace_all 模式
+  await doSaveHoldings(holdings, 'resultError', 'replace_all');
 }
 
 // ════════════════════════════════════════════════
-// 手動輸入
+// 手動輸入(R80 v2.1:加碼模式行為調整)
 // ════════════════════════════════════════════════
 function addManualRow(){
+  // 加碼模式:只允許 1 列
+  if(IS_ADD_MODE){
+    const existing = document.querySelectorAll('#manualRows .holding-row').length;
+    if(existing >= 1){
+      // 已有 1 列,不再加(理論上加一檔按鈕已隱藏,這裡防呆)
+      return;
+    }
+  }
+
   const container = document.getElementById('manualRows');
   const row = document.createElement('div');
   row.className = 'holding-row';
   row.innerHTML =
-    '<input class="ticker-input" placeholder="代號" data-k="ticker">' +
-    '<button class="del-btn" onclick="this.parentElement.remove()">×</button>' +
+    '<input class="ticker-input" placeholder="' + (IS_ADD_MODE ? '代號(例:0050、TSLL)' : '代號') + '" data-k="ticker">' +
+    (IS_ADD_MODE ? '' : '<button class="del-btn" onclick="this.parentElement.remove()">×</button>') +
     '<div class="row-fields">' +
       '<input type="number" placeholder="股數" data-k="shares">' +
       '<input type="number" step="0.001" placeholder="均價" data-k="avgPrice">' +
       '<select data-k="market">' +
-        '<option value="US">US</option>' +
-        '<option value="TW">TW</option>' +
+        '<option value="US">US 美股</option>' +
+        '<option value="TW">TW 台股</option>' +
       '</select>' +
     '</div>';
   container.appendChild(row);
@@ -892,12 +843,17 @@ async function saveManualHoldingsForm(){
 
   hideError('manualError');
   if(holdings.length === 0){
-    document.getElementById('manualError').textContent = '請至少輸入一筆有效持股(代號、股數、均價都要填)';
+    document.getElementById('manualError').textContent =
+      IS_ADD_MODE
+        ? '請填寫代號、股數、均價(都不可空)'
+        : '請至少輸入一筆有效持股(代號、股數、均價都要填)';
     document.getElementById('manualError').style.display = 'block';
     return;
   }
 
-  await doSaveHoldings(holdings, 'manualError');
+  // R80 v2.1:依模式決定送什麼 mode
+  const mode = IS_ADD_MODE ? 'add_only' : 'replace_all';
+  await doSaveHoldings(holdings, 'manualError', mode);
 }
 
 function collectHoldingsFromRows(rows){
@@ -923,9 +879,9 @@ function collectHoldingsFromRows(rows){
 }
 
 // ════════════════════════════════════════════════
-// 真寫入 — form POST + 輪詢
+// 真寫入 — form POST + 輪詢(R80 v2.1:加 mode 參數)
 // ════════════════════════════════════════════════
-async function doSaveHoldings(holdings, errorElId){
+async function doSaveHoldings(holdings, errorElId, mode){
   if(!USER_ID){
     document.getElementById(errorElId).textContent = '沒有 User ID,無法儲存。請從 LINE「上傳」按鈕進入此頁。';
     document.getElementById(errorElId).style.display = 'block';
@@ -941,12 +897,13 @@ async function doSaveHoldings(holdings, errorElId){
       action:    'save_holdings',
       userId:    USER_ID,
       requestId: requestId,
-      holdings:  JSON.stringify(holdings)
+      holdings:  JSON.stringify(holdings),
+      mode:      mode || 'replace_all'  // R80 v2.1
     });
 
     const result = await pollResult(requestId);
 
-    if(btn){btn.disabled = false; btn.textContent = '✅ 確認並儲存';}
+    if(btn){btn.disabled = false; btn.textContent = IS_ADD_MODE ? '➕ 確認加碼' : '✅ 確認並儲存';}
 
     if(!result || result.ok === false){
       const el = document.getElementById(errorElId);
@@ -958,10 +915,30 @@ async function doSaveHoldings(holdings, errorElId){
     // 顯示成功卡
     document.getElementById('mainCard').style.display = 'none';
     document.getElementById('resultCard').style.display = 'none';
+    document.getElementById('modeBanner').style.display = 'none';
     document.getElementById('successCard').style.display = 'block';
 
+    // R80 v2.1:依模式顯示不同成功訊息
+    const successTitle = document.getElementById('successTitle');
+    const successDesc = document.getElementById('successDesc');
+    if(IS_ADD_MODE){
+      successTitle.textContent = '加碼完成';
+      successDesc.innerHTML =
+        '已寫入加碼紀錄<br>' +
+        '同檔自動加權平均、新檔追加<br>' +
+        '可關閉此頁回到 LINE 查看「裝備欄」';
+    } else {
+      successTitle.textContent = '設定完成';
+      successDesc.innerHTML =
+        '持倉已成功儲存<br>' +
+        '每天早上 8:30 會推播個人化分析<br>' +
+        '可關閉此頁回到 LINE';
+    }
+
     const summary = document.getElementById('successSummary');
-    summary.innerHTML = '<div style="color:#F5A623;font-weight:700;margin-bottom:6px;">已儲存 ' + holdings.length + ' 檔持股:</div>';
+    const labelText = IS_ADD_MODE ? '加碼' : '已儲存';
+    summary.innerHTML = '<div style="color:#F5A623;font-weight:700;margin-bottom:6px;">' +
+                        labelText + ' ' + holdings.length + ' 檔:</div>';
     holdings.forEach(h => {
       const cur = h.market === 'TW' ? 'NT$' : '$';
       summary.innerHTML += '<div>' + h.ticker + '  ' + h.shares + '股  均價 ' + cur + h.avgPrice + '</div>';
@@ -970,18 +947,12 @@ async function doSaveHoldings(holdings, errorElId){
     window.scrollTo({top: 0, behavior: 'smooth'});
 
   } catch(e){
-    if(btn){btn.disabled = false; btn.textContent = '✅ 確認並儲存';}
+    if(btn){btn.disabled = false; btn.textContent = IS_ADD_MODE ? '➕ 確認加碼' : '✅ 確認並儲存';}
     const el = document.getElementById(errorElId);
     el.textContent = '❌ ' + (e.message || e);
     el.style.display = 'block';
   }
 }
-
-// ════════════════════════════════════════════════
-// 啟動 — 預設加 2 個手動列
-// ════════════════════════════════════════════════
-addManualRow();
-addManualRow();
 </script>
 </body>
 </html>
